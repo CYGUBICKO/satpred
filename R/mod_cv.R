@@ -1,6 +1,8 @@
 #' Cross-validation
+#'
+#' @export
 
-modcv <- function(modfun, formula = formula(data), data = sys.parent(), nfolds = 10, foldids = NULL, ...) {
+modcv <- function(formula = formula(data), data = sys.parent(), modfun, nfolds = 10, foldids = NULL, ...) {
 	
 	if (is.null(foldids)){
 	N <- NROW(data)
@@ -24,5 +26,7 @@ modcv <- function(modfun, formula = formula(data), data = sys.parent(), nfolds =
 		out[[paste0("fold", f)]] <- est
 	}
 	out <- do.call("rbind", out)
+	rownames(out) <- NULL
+	out <- out[, union("fold", colnames(out))]
 	return(out)
 }

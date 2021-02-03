@@ -1,29 +1,49 @@
 #' Implemented packages
 #'
 #' @export
-rfsrc.satpred <- function(formula = NULL, train_df = NULL, test_df = NULL, ntree = 100, mtry = NULL, ...) {
-	if (is.null(mtry)) {
-		param <- expand.grid(ntree=ntree)
+rfsrc.satpred <- function(formula = NULL, train_df = NULL, test_df = NULL, param_grid = NULL
+	, ntree = 1000, mtry = NULL, nodesize = NULL, splitrule = "logrank", finalmod = FALSE, ...) {
+	
+	rfsrc_args <- list(formula=formula, data=train_df, forest=TRUE)
+	if (is.null(param_grid)) {
+		if (is.null(mtry)) {
+			param <- expand.grid(ntree=ntree, splitrule=splitrule)
+		} else if (is.null(nodesize)) {
+			param <- expand.grid(ntree=ntree, mtry=mtry, splitrule=splitrule)
+		} else {
+			param <- expand.grid(ntree=ntree, mtry=mtry, nodesize=nodesize, splitrule=splitrule)
+		}
 	} else {
-		param <- expand.grid(ntree=ntree, mtry = mtry)
+		param <- param_grid
 	}
+	param_args <- as.list(param)
+#	names(param_args) <- param_args
+	rfsrc_args[names(param_args)] <- param_args
 	new_args <- list(...)
-	rfsrc_args <- list(formula = formula, data = train_df, ntree = ntree, mtry = mtry, forest=TRUE)
 	if (length(new_args)) rfsrc_args[names(new_args)] <- new_args
-	error <- lapply(1:NROW(param), function(x){
-		rfsrc_args$ntree <- param$ntree[[x]]
-		rfsrc_args$mtry <- param$mtry[[x]]
-		fit <- do.call("rfsrc.fast", rfsrc_args)
-		if (is.null(test_df)) test_df <- train_df
-		pred <- predict(fit, test_df)
-		error_df <- data.frame(error = cverror(pred), ntree = fit$ntree, mtry=fit$mtry
-			, nodesize = fit$nodesize, nodedepth = fit$nodedepth, splitrule = fit$splitrule
-		)
-		return(error_df)
-	})
-	error <- do.call("rbind", error)
-#	class(error) <- "rfsrc"
-	return(error)
+
+	if (!finalmod) {
+		args_match <- match(colnames(param), names(rfsrc_args), nomatch = FALSE)
+		param_match <- match(names(rfsrc_args), colnames(param), nomatch = FALSE)
+		error <- lapply(1:NROW(param), function(x){
+			rfsrc_args[args_match] <- param[x, param_match]
+			fit <- do.call("rfsrc.fast", rfsrc_args)
+			if (is.null(test_df)) test_df <- train_df
+			pred <- predict(fit, test_df)
+			all_params <- names(param_args)
+			all_params <- union(c("mtry", "ntree", "nodesize", "splitrule"), all_params)
+			param_temp <- fit[all_params]
+			names(param_temp) <- all_params
+			error_list <- list(param_temp, error = cverror(pred))
+			error_df <- as.data.frame(error_list)
+			return(error_df)
+		})
+		error <- do.call("rbind", error)
+		return(error)
+	} else {
+		fit <- do.call("rfsrc", rfsrc_args)
+		return(fit)
+	}
 }
 
 #' Cross-validation error
@@ -34,4 +54,12 @@ cverror.rfsrc <- function(x){
 
 #' @export
 cverror <- function(x)UseMethod("cverror", x)
+
+#' Get best tune
+#'
+#' @keywords internal
+getbesTune <- function(x) {
+	x <- x[which.min(x$error),]
+	return(x)
+}
 
