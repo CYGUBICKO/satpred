@@ -47,13 +47,50 @@ rfsrc.satpred <- function(formula = NULL, train_df = NULL, test_df = NULL, param
 }
 
 #' Cross-validation error
-#' @export
+#'
+#' @keywords internal
+
 cverror.rfsrc <- function(x){
 	return(x$err.rate[x$ntree])
 }
 
-#' @export
-cverror <- function(x)UseMethod("cverror", x)
+#' Tidy model objects
+#'
+#' @keywords internal
+
+modtidy.rfsrc <- function(x) {
+	x$time <- x$time.interest
+	x$surv <- x$survival
+	x$chaz <- x$chf
+	return(x)
+}
+
+#' Tidy prediction objects
+#'
+#' @keywords internal
+
+predtidy.rfsrc <- function(x) {
+	x$time <- x$time.interest
+	x$surv <- x$survival
+	return(x)
+}
+
+
+#' Compute the concordance statistic for the pcoxtime model
+#'
+#' The function computes the agreement between the observed response and the predictor.
+#'
+#' @keywords internal
+
+survconcord.rfsrc <- function(object, newdata = NULL, stats = FALSE) {
+	if (is.null(newdata)) {
+		pred <- predict(object)
+	} else {
+		pred <- predict(object, newdata)
+	}
+	concord <- 1 - pred$err.rate[pred$ntree]
+	return(concord)
+}
 
 #' Get best tune
 #'
