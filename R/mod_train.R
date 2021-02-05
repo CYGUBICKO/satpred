@@ -4,6 +4,8 @@
 
 modtune <- function(formula = formula(data), data = sys.parent()
 	, modfun, param_grid = NULL, nfolds = 10, foldids = NULL, ...) {
+	
+	Terms <- terms(formula, data = data)
 	new_args <- list(...)
 	mod_args <- list(formula = formula, data = data, modfun = modfun, param_grid = param_grid, nfolds = nfolds, foldids = foldids)
 	if (length(new_args)) mod_args[names(new_args)] <- new_args
@@ -18,6 +20,7 @@ modtune <- function(formula = formula(data), data = sys.parent()
 	best_args <- as.list(besTune[, hyper])
 	mod_args[names(best_args)] <- best_args
 	out <- list(result=result, besTune=besTune, modelfun = modfun, modelargs = mod_args)
+	out$terms <- Terms
 	out$call <- match.call()
 	class(out) <- "satpred"
 	return(out)
@@ -36,6 +39,7 @@ modfit.satpred <- function(object, ...) {
 		mod_args[names(new_args)] <- new_args
 	}
 	finalModel <- do.call(modfun, mod_args)
+	finalModel$terms <- object$terms
 	finalModel$call <- match.call()
 	class(finalModel) <- c(class(finalModel), "satpred")
 	return(finalModel)

@@ -13,19 +13,25 @@ predict.satpred <- function(object, ...) {
 #' @export
 get_avesurv.satpred <- function(object, ...) {
 	object <- modtidy(object)
-	surv <- sapply(data.frame(object$surv), mean)
-	chaz <- sapply(data.frame(object$chaz), mean)
+	surv <- as.vector(sapply(data.frame(object$surv), mean))
+	chaz <- as.vector(sapply(data.frame(object$chaz), mean))
 	time <- object$time
-	df <- data.frame(time = time, surv = surv, chaz=chaz)
-	rownames(df) <- NULL
-	return(df)
+	out <- list(time = time, surv = surv, chaz=chaz)
+	out$call <- match.call()
+	class(out) <- "satsurv"
+	out
 }
 
 #' Individual survival
+#'
+#' @export
 get_indivsurv.satpred <- function(object, newdata) {
 	pred <- predict(object, newdata = newdata)
-	pred <- predtidy(pred)
-	return(pred)
+	out <- predtidy(pred)
+	out <- list(time = out$time, surv = out$surv, chaz = out$chaz)
+	out$call <- match.call()
+	class(out) <- "satsurv"
+	out
 }
 
 #' Predict survival probabilities at various time points
@@ -81,4 +87,15 @@ predictRisk.satpred <- function(object, newdata, times, ...){
 get_survconcord <- function(object, newdata = NULL, stats = FALSE) {
 	concord <- survconcord(object, newdata, stats)
 	return(concord)
+}
+
+#' Permutation variable importance
+#'
+#' Computes the relative importance based on random permutation of focal variable for various survival models.
+#'
+#' @export
+
+get_pvimp <- function(model, newdata, nrep = 50) {
+	vi <- pvimp(model, newdata, nrep)
+	return(vi)
 }

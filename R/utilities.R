@@ -72,6 +72,7 @@ modtidy.rfsrc <- function(x) {
 predtidy.rfsrc <- function(x) {
 	x$time <- x$time.interest
 	x$surv <- x$survival
+	x$chaz <- x$chf
 	return(x)
 }
 
@@ -91,6 +92,31 @@ survconcord.rfsrc <- function(object, newdata = NULL, stats = FALSE) {
 	concord <- 1 - pred$err.rate[pred$ntree]
 	return(concord)
 }
+
+
+#' Permutation variable importance method for rfsrc 
+#'
+#' @keywords internal
+
+pvimp.rfsrc <- function(model, newdata, nrep = 50){
+	# Overall score
+	overall_c <- survconcord.rfsrc(model, newdata = newdata, stats = FALSE)
+	xvars <- all.vars(formula(delete.response(Terms)))
+	N <- NROW(newdata)
+	vi <- sapply(xvars, function(x){
+		permute_df <- newdata[rep(seq(N), nrep), ]
+		permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
+		index <- rep(1:nrep, each = N)
+		permute_df[, x] <- permute_var
+		risk <- predict(model, newdata = permute_df, type = "risk")
+		perm_c <- unlist(lapply(split(permute_df, index), function(d){
+			survconcord.rfsrc(model, newdata = d, stats = FALSE)
+		}))
+		mean((overall_c - perm_c)/overall_c)
+	})
+	return(vi)
+}
+
 
 #' Get best tune
 #'

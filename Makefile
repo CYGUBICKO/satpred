@@ -21,10 +21,11 @@ autopipeR = defined
 satpred.Rout: R/satpred.R
 utilities.Rout: R/utilities.R
 methods.Rout: R/methods.R
+pkgsExport.Rout: R/pkgsExport.R
 mod_cv.Rout: R/mod_cv.R
 mod_train.Rout: R/mod_train.R
 posthocfuns.Rout: R/posthocfuns.R
-
+satpredplots.Rout: R/satpredplots.R
 
 ######################################################################
 
