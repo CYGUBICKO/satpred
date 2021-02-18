@@ -22,3 +22,6 @@ survconcord <- function(object, newdata = NULL, stats = FALSE)UseMethod("survcon
 
 #' @keywords internal
 pvimp <- function(model, newdata, nrep = 50)UseMethod("pvimp")
+
+#' @keywords internal
+varimp <- function(object, type = c("coef", "perm", "model"), relative = TRUE, newdata, nrep = 20, ...)UseMethod("varimp")

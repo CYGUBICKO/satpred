@@ -22,7 +22,7 @@ modtune <- function(formula = formula(data), data = sys.parent()
 	out <- list(result=result, besTune=besTune, modelfun = modfun, modelargs = mod_args)
 	out$terms <- Terms
 	out$call <- match.call()
-	class(out) <- "satpred"
+	class(out) <- c("satpred", out$call[["modfun"]])
 	return(out)
 }
 

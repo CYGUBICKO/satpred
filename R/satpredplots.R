@@ -1,3 +1,26 @@
+#' Cross-validation plots
+#'
+#' @import ggplot2
+#' @export
+
+plot.rfsrc.satpred <- function(x, ..., show_best = TRUE, lsize = 0.3, pshape = "O") {
+	tune_df <- x$result
+	best_df <- x$besTune
+	p1 <- (ggplot(tune_df, aes(x = as.factor(mtry), y = error, group=as.factor(ntree), colour = as.factor(ntree)))
+		+ geom_point(shape = pshape)
+		+ geom_line(size = lsize)
+		+ facet_grid(splitrule~nodesize)
+		+ labs(x = "# randomly selected predictors", y = "Error (1 - C)", colour = "# trees")
+	)
+	if (show_best) {
+		p1 <- (p1
+			+ geom_point(data=best_df, aes(x = as.factor(mtry), y = error), colour="red", size=2)
+			+ geom_hline(data=best_df, aes(yintercept=error), lty=2)
+		)
+	}
+	return(p1)
+}
+
 #' Plot survival and cumulative hazard curves
 #'
 #' Plot estimated survival and cumulative  hazard curves for \code{satpred} model.
@@ -42,23 +65,139 @@ plot.satsurv <- function(x, ..., type = c("surv", "cumhaz"), lsize = 0.3, lcol =
 		plot_df <- data.frame(id = 1, time = time, surv = surv, cumhaz = cumhaz, avechaz = avechaz, avesurv = avesurv)
 	}
 	id <- NULL
-	p0 <- ggplot(plot_df, aes(x = time, group = id), colour = lcol) + labs(x = "Time")
+	p0 <- ggplot(plot_df, aes(x = time, group = id)) + labs(x = "Time")
 	if (type == "surv"){
 		p1 <- (p0 
 			+ geom_step(aes(y = avesurv), colour = "red")
-			+ geom_step(aes(y = surv), size = lsize, lty = ltype) + labs(y = "Survival prob.")
+			+ geom_step(aes(y = surv), colour = lcol, size = lsize, lty = ltype) + labs(y = "Survival prob.")
 		)
 		if (compare){
-			p1 <- p0 + geom_step(aes(y = surv, col = compare_lab), size = lsize) + labs(y = "Survival prob.")
+			p1 <- p0 + geom_step(aes(y = surv, colour = compare_lab), size = lsize) + labs(y = "Survival prob.")
 		}
 	} else {
 		p1 <- (p0 
 			+ geom_step(aes(y = avechaz), colour = "red")
-			+ geom_step(aes(y = cumhaz), size = lsize, lty = ltype) + labs(y = "Cumulative hazard")
+			+ geom_step(aes(y = cumhaz), colour = lcol, size = lsize, lty = ltype) + labs(y = "Cumulative hazard")
 		)
 		if (compare){
-			p1 <- p0 + geom_step(aes(y = cumhaz, col = compare_lab), size = lsize) + labs(y = "Cumulative hazard")
+			p1 <- p0 + geom_step(aes(y = cumhaz, colour = compare_lab), size = lsize) + labs(y = "Cumulative hazard")
 		}
 	}
 	return(p1)
 }
+
+
+
+#' Prediction performance
+#'
+#' Plots predictive performance comparison of survival models. It uses risk scoring from \code{\link[riskRegression]{Score}}. 
+#'
+#' @details
+#' Implements plot method for \code{\link[riskRegression]{Score}} for time-dependent Brier score, AUC and ROC. However, currently, no support for time-dependent covariate models.
+#'
+#' @param x \code{\link[riskRegression]{Score}} object. See examples.
+#' @param ... for future implementations.
+#' @param type metric to return. Choices are \code{"roc", "auc", "brier"}.
+#' @param pos spacing between the lines.
+#'
+#' @return a \code{\link[ggplot2]{ggplot}} object.
+#'
+#' @import ggplot2
+#' @export
+
+plot.Score <- function(x, ..., type = c("roc", "auc", "brier"), pos = 0.3){
+	if (!inherits(x, "Score"))
+		stop("Object should be score. See ?riskRegression::Score")
+	type <- match.arg(type)
+	if (type == "roc"){
+		df <- x$ROC$plotframe
+		df$times <- as.factor(df$times)
+		FPR <- TPR <- model <- AUC <- lower <- upper <- Brier <- NULL
+		p1 <- (ggplot(df, aes(x = FPR, y = TPR, color = model))
+			+ geom_line(size = 1)
+			+ geom_abline(size = 1, colour = "grey")
+			+ facet_wrap(~times)
+			+ labs(x = "1-Specificity", y = "Sensitivity", colour = "Time")
+			+ scale_colour_viridis_d(option = "inferno")
+			+ theme(legend.position = "right")
+		)
+	} else if (type == "auc"){
+		df <- x$AUC$score
+		df$times <- as.factor(df$times)
+		p1 <- (ggplot(df, aes(x = times, y = AUC, group = model, colour = model))
+			+ geom_point(position = position_dodge(pos))
+			+ geom_pointrange(aes(ymin = lower, ymax = upper, colour = model), position = position_dodge(pos))
+			+ scale_colour_viridis_d(option = "inferno")
+			+ labs(x = "Time", y = "AUC", colour = "Model")
+			+ theme(legend.position = "right")
+		)
+	} else {
+		df <- x$Brier$score
+		df$times <- as.factor(df$times)
+		p1 <- (ggplot(df, aes(x = times, y = Brier, group = model, colour = model))
+			+ geom_point(position = position_dodge(pos))
+			+ geom_pointrange(aes(ymin = lower, ymax = upper, colour = model), position = position_dodge(pos))
+			+ scale_colour_viridis_d(option = "inferno")
+			+ labs(x = "Time", y = "Brier", colour = "Model")
+			+ theme(legend.position = "right")
+		)
+	}
+	return(p1)
+}
+
+
+#' Plotting prediction error curves
+#'
+#' @import ggplot2
+#' @export
+
+plotpec <- function(x, ..., lsize = 0.3, ltype = 2, xlab = "Time", ylab = "Prediction error") {
+	if (!inherits(x, "pec")) stop("Needs a pec object. See ?pec::pec")
+	df <- do.call("data.frame", list(x$AppErr, times=x$time))
+	vnames <- colnames(df)[!colnames(df) %in% "times"]
+	df <- reshape(df, timevar = "model", v.names = "score"
+		, varying = vnames, times = vnames, direction = "long"
+	)
+	rownames(df) <- NULL
+	p1 <- (ggplot(df, aes(x = times, y = score, colour = model))
+		+ geom_line()
+		+ scale_colour_viridis_d(option = "inferno")
+		+ labs(x = xlab, y = ylab, colour = "Model")
+		+ theme(legend.position = "right")
+	)
+	return(p1)
+}
+
+#' Generic method for plotting variable importance of various models
+#'
+#' @import ggplot2
+#' @export
+
+plot.varimp <- function(x, ..., pos = 0.3, drop_zero = TRUE){
+	x$sign <- ifelse(x$sign==1, "+", ifelse(x$sign==-1, "-", "0"))
+	x <- x[order(x$Overall), ]
+	if (drop_zero){
+		x <- x[x$Overall!=0, ]
+		x <- droplevels(x)
+	}
+	Overall <- NULL
+	nmods <- unique(x$model)
+	pos <- position_dodge(width = pos)
+	if (length(nmods)==1) {
+		p0 <- ggplot(x, aes(x = reorder(terms, Overall), y = Overall)) 
+	} else {
+		p0 <- (ggplot(x, aes(x = reorder(terms, Overall), y = Overall, colour = model))
+			+ labs(colour = "Model")
+		)
+	}
+	p1 <- (p0
+		+ geom_point(aes(shape=sign), position = pos)
+		+ geom_linerange(aes(ymin = 0, ymax = Overall, lty = sign), position = pos)
+		+ scale_shape_manual(name = "Sign", values=c(1,16, 15))
+		+ labs(x = "", y = "Importance", linetype = "Sign")
+		+ coord_flip(clip = "off", expand = TRUE)
+		+ theme_minimal()	
+	)
+	return(p1)
+}
+

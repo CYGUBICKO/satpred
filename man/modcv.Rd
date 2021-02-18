@@ -10,6 +10,8 @@ modcv(
   modfun,
   nfolds = 10,
   foldids = NULL,
+  parallelize = FALSE,
+  nclusters = parallel::detectCores(),
   ...
 )
 }

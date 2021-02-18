@@ -101,7 +101,7 @@ survconcord.rfsrc <- function(object, newdata = NULL, stats = FALSE) {
 pvimp.rfsrc <- function(model, newdata, nrep = 50){
 	# Overall score
 	overall_c <- survconcord.rfsrc(model, newdata = newdata, stats = FALSE)
-	xvars <- all.vars(formula(delete.response(Terms)))
+	xvars <- all.vars(formula(delete.response(terms(model))))
 	N <- NROW(newdata)
 	vi <- sapply(xvars, function(x){
 		permute_df <- newdata[rep(seq(N), nrep), ]
@@ -117,6 +117,27 @@ pvimp.rfsrc <- function(model, newdata, nrep = 50){
 	return(vi)
 }
 
+#' Compute variable importance random forest
+#'
+#' @keywords internal
+
+varimp.rfsrc <- function(object, type = c("coef", "perm", "model"), relative = TRUE, newdata, nrep = 20, ...){
+	type <- match.arg(type)
+	if (type=="perm"){
+		out <- data.frame(Overall = get_pvimp(object, newdata, nrep))
+	} else {
+		new_args <- list(...)
+		new_args$object <- object
+		out <- do.call("vimp", new_args)$importance
+		out <- data.frame(Overall = out)
+	}
+	out$sign <- sign(out$Overall)
+	out$Overall <- abs(out$Overall)
+	if (relative){
+		out$Overall <- out$Overall/sum(out$Overall, na.rm = TRUE)
+	}
+	return(out)
+}
 
 #' Get best tune
 #'

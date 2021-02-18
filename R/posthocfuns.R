@@ -99,3 +99,24 @@ get_pvimp <- function(model, newdata, nrep = 50) {
 	vi <- pvimp(model, newdata, nrep)
 	return(vi)
 }
+
+
+#' Compute variable importance of various survival models object
+#'
+#' @aliases get_varimp
+#'
+#' @details
+#' Absolute value of the coefficients (coef) corresponding the tuned model are used \code{type = perm}. Otherwise, variable level importance is computed from the model. 
+#'
+#' @export
+
+get_varimp <- function(object, type = c("coef", "perm", "model")
+	, relative = TRUE, newdata, nrep = 20, modelname = "model1", ...) {
+	imp <- varimp(object, type, relative, newdata, nrep, ...)
+	imp$terms <- rownames(imp)
+	rownames(imp) <- NULL
+	out <- imp[, c("terms", "Overall", "sign")]
+	out$model <- modelname
+	class(out) <- c("varimp", class(out))
+	return(out)
+}
