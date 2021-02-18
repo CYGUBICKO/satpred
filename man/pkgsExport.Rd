@@ -8,6 +8,7 @@
 \alias{rfsrc}
 \alias{rfsrc.fast}
 \alias{vimp}
+\alias{rcorr.cens}
 \title{Import and export various functions from various packages}
 \description{
 Import and export various functions from various packages
@@ -23,5 +24,7 @@ Import and export rfsrc. See \code{\link[randomForestSRC]{rfsrc}}
 Import and export rfsrc.fast. See \code{\link[randomForestSRC]{rfsrc.fast}}
 
 Import and export vimp. See \code{\link[randomForestSRC]{vimp}}
+
+Import and export rcorr.cens. See \code{\link[Hmisc]{rcorr.cens}}
 }
 \keyword{internal}

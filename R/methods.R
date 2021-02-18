@@ -3,7 +3,7 @@
 predtidy <- function(x)UseMethod("predtidy") 
 
 #' @keywords internal
-cverror <- function(x)UseMethod("cverror")
+cverror <- function(x, y = NULL, ...)UseMethod("cverror")
 
 #' @export
 modfit <- function(object, ...)UseMethod("modfit")

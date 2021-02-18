@@ -50,7 +50,7 @@ rfsrc.satpred <- function(formula = NULL, train_df = NULL, test_df = NULL, param
 #'
 #' @keywords internal
 
-cverror.rfsrc <- function(x){
+cverror.rfsrc <- function(x, y = NULL, ...){
 	return(x$err.rate[x$ntree])
 }
 

@@ -20,6 +20,7 @@ autopipeR = defined
 ######################################################################
 satpred.Rout: R/satpred.R
 utilities.Rout: R/utilities.R
+gbm_satpred.Rout: R/gbm_satpred.R
 methods.Rout: R/methods.R
 pkgsExport.Rout: R/pkgsExport.R
 mod_cv.Rout: R/mod_cv.R

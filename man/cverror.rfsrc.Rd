@@ -4,7 +4,7 @@
 \alias{cverror.rfsrc}
 \title{Cross-validation error}
 \usage{
-\method{cverror}{rfsrc}(x)
+\method{cverror}{rfsrc}(x, y = NULL, ...)
 }
 \description{
 Cross-validation error

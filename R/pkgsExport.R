@@ -58,3 +58,13 @@ NULL
 #' @rdname pkgsExport
 #' @keywords internal
 NULL
+
+#' Import and export rcorr.cens. See \code{\link[Hmisc]{rcorr.cens}}
+#'
+#' @importFrom Hmisc rcorr.cens
+#' @export rcorr.cens
+#' @name rcorr.cens
+#' @rdname pkgsExport
+#' @keywords internal
+NULL
+
