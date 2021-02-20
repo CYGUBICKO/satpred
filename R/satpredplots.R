@@ -113,12 +113,16 @@ plot.Score <- function(x, ..., type = c("roc", "auc", "brier"), pos = 0.3){
 		df <- x$ROC$plotframe
 		df$times <- as.factor(df$times)
 		FPR <- TPR <- model <- AUC <- lower <- upper <- Brier <- NULL
+		model_cols <- unique(df$model)
 		p1 <- (ggplot(df, aes(x = FPR, y = TPR, color = model))
 			+ geom_line(size = 1)
 			+ geom_abline(size = 1, colour = "grey")
 			+ facet_wrap(~times)
 			+ labs(x = "1-Specificity", y = "Sensitivity", colour = "Time")
-			+ scale_colour_viridis_d(option = "inferno")
+#			+ scale_colour_viridis_d(option = "inferno")
+			+ scale_color_manual(breaks = model_cols
+				, values = rainbow(n = length(model_cols))
+			)
 			+ theme(legend.position = "right")
 		)
 	} else if (type == "auc"){
@@ -127,7 +131,10 @@ plot.Score <- function(x, ..., type = c("roc", "auc", "brier"), pos = 0.3){
 		p1 <- (ggplot(df, aes(x = times, y = AUC, group = model, colour = model))
 			+ geom_point(position = position_dodge(pos))
 			+ geom_pointrange(aes(ymin = lower, ymax = upper, colour = model), position = position_dodge(pos))
-			+ scale_colour_viridis_d(option = "inferno")
+#			+ scale_colour_viridis_d(option = "inferno")
+			+ scale_color_manual(breaks = model_cols
+				, values = rainbow(n = length(model_cols))
+			)
 			+ labs(x = "Time", y = "AUC", colour = "Model")
 			+ theme(legend.position = "right")
 		)
@@ -137,7 +144,10 @@ plot.Score <- function(x, ..., type = c("roc", "auc", "brier"), pos = 0.3){
 		p1 <- (ggplot(df, aes(x = times, y = Brier, group = model, colour = model))
 			+ geom_point(position = position_dodge(pos))
 			+ geom_pointrange(aes(ymin = lower, ymax = upper, colour = model), position = position_dodge(pos))
-			+ scale_colour_viridis_d(option = "inferno")
+#			+ scale_colour_viridis_d(option = "inferno")
+			+ scale_color_manual(breaks = model_cols
+				, values = rainbow(n = length(model_cols))
+			)
 			+ labs(x = "Time", y = "Brier", colour = "Model")
 			+ theme(legend.position = "right")
 		)
@@ -159,9 +169,12 @@ plotpec <- function(x, ..., lsize = 0.3, ltype = 2, xlab = "Time", ylab = "Predi
 		, varying = vnames, times = vnames, direction = "long"
 	)
 	rownames(df) <- NULL
+	model_cols <- unique(df$model)
 	p1 <- (ggplot(df, aes(x = times, y = score, colour = model))
 		+ geom_line()
-		+ scale_colour_viridis_d(option = "inferno")
+		+ scale_color_manual(breaks = model_cols
+			, values = rainbow(n = length(model_cols))
+		)
 		+ labs(x = xlab, y = ylab, colour = "Model")
 		+ theme(legend.position = "right")
 	)
@@ -187,6 +200,9 @@ plot.varimp <- function(x, ..., pos = 0.3, drop_zero = TRUE){
 		p0 <- ggplot(x, aes(x = reorder(terms, Overall), y = Overall)) 
 	} else {
 		p0 <- (ggplot(x, aes(x = reorder(terms, Overall), y = Overall, colour = model))
+			+ scale_color_manual(breaks = nmods
+				, values = rainbow(n = length(nmods))
+			)
 			+ labs(colour = "Model")
 		)
 	}

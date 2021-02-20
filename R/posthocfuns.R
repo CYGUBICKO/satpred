@@ -11,7 +11,7 @@ predict.satpred <- function(object, ...) {
 #' Average survival
 #'
 #' @export
-get_avesurv.satpred <- function(object, ...) {
+get_avesurv.rfsrc <- function(object, ...) {
 	object <- modtidy(object)
 	surv <- as.vector(sapply(data.frame(object$surv), mean))
 	chaz <- as.vector(sapply(data.frame(object$chaz), mean))
@@ -25,7 +25,7 @@ get_avesurv.satpred <- function(object, ...) {
 #' Individual survival
 #'
 #' @export
-get_indivsurv.satpred <- function(object, newdata) {
+get_indivsurv.rfsrc <- function(object, newdata) {
 	pred <- predict(object, newdata = newdata)
 	out <- predtidy(pred)
 	out <- list(time = out$time, surv = out$surv, chaz = out$chaz)
@@ -58,7 +58,6 @@ predictSurvProb.satpred <- function(object, newdata, times, ...){
 		stop("Prediction failed")
 	p
 }
-
 
 #' Extract predictions from satpred model
 #'

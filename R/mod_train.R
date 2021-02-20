@@ -30,7 +30,7 @@ modtune <- function(formula = formula(data), data = sys.parent()
 #'
 #' @export
 
-modfit.satpred <- function(object, ...) {
+modfit.satpred <- function(object, return_data = TRUE, ...) {
 	new_args <- list(...)
 	modfun <- object$modelfun
 	mod_args <- object$modelargs
@@ -40,7 +40,14 @@ modfit.satpred <- function(object, ...) {
 	}
 	finalModel <- do.call(modfun, mod_args)
 	finalModel$terms <- object$terms
+	if (return_data) {
+		finalModel$modelData <- mod_args$data
+	}
 	finalModel$call <- match.call()
-	class(finalModel) <- c(class(finalModel), "satpred")
+	if (inherits(finalModel, "gbm")){
+		class(finalModel) <- c("gbm.satpred", class(finalModel), "satpred")
+	} else {
+		class(finalModel) <- c(class(finalModel), "satpred")
+	}
 	return(finalModel)
 }

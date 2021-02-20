@@ -59,6 +59,23 @@ cverror.gbm <- function(x, y = NULL, ...){
 }
 
 
+#' Compute the concordance statistic for the pcoxtime model
+#'
+#' The function computes the agreement between the observed response and the predictor.
+#'
+#' @keywords internal
+
+survconcord.gbm <- function(object, newdata = NULL, stats = FALSE) {
+	if (is.null(newdata)) newdata <- object$modelData
+	pred <- predict(object, newdata=newdata, n.trees=object$n.trees)
+	class(pred) <- c(class(pred), "gbm")
+	y  <- model.extract(model.frame(terms(object), data = newdata), "response")
+	concord <- cverror(pred, y)
+	return(concord)
+}
+
+
+
 #' Cross-validation plots
 #'
 #' @import ggplot2
@@ -83,4 +100,119 @@ plot.gbm.satpred <- function(x, ..., show_best = TRUE, lsize = 0.3, pshape = "O"
 	}
 	return(p1)
 }
+
+
+#' Average survival
+#'
+#' @export
+get_avesurv.gbm <- function(object, ...) {
+	object <- get_indivsurv(object)
+	surv <- as.vector(colMeans(object$surv))
+	chaz <- -log(surv)
+	time <- object$time
+	out <- list(time = time, surv = surv, chaz=chaz)
+	out$call <- match.call()
+	class(out) <- "satsurv"
+	out
+}
+
+#' Individual survival
+#'
+#' Adopted from riskRegression predictRisk.gbm
+#' @export
+get_indivsurv.gbm <- function(object, newdata) {
+	n.trees <- object$n.trees
+	traindata <- object$modelData
+	xb.train <- predict(object, newdata = traindata, n.trees = n.trees)
+	y <- model.extract(model.frame(terms(object), traindata), "response")
+	times <- sort(unique(drop(y[,1])))
+	H2 <- gbm::basehaz.gbm(t = y[,1], delta = y[,2]
+		, f.x = xb.train
+		, t.eval = times
+		, cumulative = TRUE
+	)
+	if (!missing(newdata)) {
+		xb.test <- predict(object, newdata = newdata , n.trees = n.trees)
+	} else {
+		xb.test <- xb.train
+	}
+	s <- matrix(0, nrow = length(xb.test), ncol = length(H2))
+	
+	for (i in 1:length(xb.test)) s[i,] <- exp(-exp(xb.test[i])*H2)
+	out <- list(time = times, surv = s, chaz = -log(s))
+	out$call <- match.call()
+	class(out) <- "satsurv"
+	out
+}
+
+#' Permutation variable importance method for gbm 
+#'
+#' @keywords internal
+
+pvimp.gbm <- function(model, newdata, nrep = 50){
+	# Overall score
+	overall_c <- survconcord.gbm(model, newdata = newdata, stats = FALSE)
+	xvars <- all.vars(formula(delete.response(terms(model))))
+	N <- NROW(newdata)
+	vi <- sapply(xvars, function(x){
+		permute_df <- newdata[rep(seq(N), nrep), ]
+		if (is.factor(permute_df[,x])||is.character(permute_df[,x])){
+			permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
+			permute_var <- factor(permute_var, levels = levels(permute_df[,x]))
+		} else {
+			permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
+		}
+		index <- rep(1:nrep, each = N)
+		permute_df[, x] <- permute_var
+		perm_c <- unlist(lapply(split(permute_df, index), function(d){
+			survconcord.gbm(model, newdata = d, stats = FALSE)
+		}))
+		mean((overall_c - perm_c)/overall_c)
+	})
+	return(vi)
+}
+
+#' Compute variable importance gbm
+#'
+#' @keywords internal
+
+varimp.gbm <- function(object, type = c("coef", "perm", "model"), relative = TRUE, newdata, nrep = 20, ...){
+	type <- match.arg(type)
+	if (type=="perm"){
+		out <- data.frame(Overall = get_pvimp(object, newdata, nrep))
+	} else {
+		new_args <- list(...)
+		new_args$object <- object
+		new_args$plotit <- FALSE
+		new_args$n.trees <- object$n.trees
+		out1 <- do.call("summary", new_args)
+		out <- data.frame(Overall = out1$rel.inf)
+		rownames(out) <- out1$var
+	}
+	out$sign <- sign(out$Overall)
+	out$Overall <- abs(out$Overall)
+	if (relative){
+		out$Overall <- out$Overall/sum(out$Overall, na.rm = TRUE)
+	}
+	return(out)
+}
+
+#' Extract predictions from gbm model
+#'
+#' Extract event probabilities from the fitted model.
+#'
+#' @aliases predictRisk
+#'
+#' @details
+#' For survival outcome, the function predicts the risk, \eqn{1 - S(t|x)}, where \eqn{S(t|x)} is the survival chance of an individual characterized by \eqn{x}. riskRegression::predictRisk.gbm seems to have issues reconstructing the data.
+#'
+#' @importFrom riskRegression predictRisk
+#' @export predictRisk
+#' @export
+
+predictRisk.gbm.satpred <- function(object, newdata, times, ...){
+	p <- 1 - predictSurvProb(object, newdata, times)
+	p
+}
+
 
