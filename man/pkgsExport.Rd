@@ -9,6 +9,8 @@
 \alias{rfsrc.fast}
 \alias{vimp}
 \alias{rcorr.cens}
+\alias{gbm}
+\alias{deepsurv}
 \title{Import and export various functions from various packages}
 \description{
 Import and export various functions from various packages
@@ -26,5 +28,9 @@ Import and export rfsrc.fast. See \code{\link[randomForestSRC]{rfsrc.fast}}
 Import and export vimp. See \code{\link[randomForestSRC]{vimp}}
 
 Import and export rcorr.cens. See \code{\link[Hmisc]{rcorr.cens}}
+
+Import and export gbm. See \code{\link[gbm]{gbm}}
+
+Import and export deepsurv. See \code{\link[survivalmodels]{deepsurv}}
 }
 \keyword{internal}

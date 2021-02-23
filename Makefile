@@ -18,15 +18,40 @@ Sources += $(wildcard man/*.Rd) NAMESPACE DESCRIPTION
 autopipeR = defined
 
 ######################################################################
+## Implemented methods
+### rfsrc.satpred: random survival forest
+### gbm.satpred: gradient boosted trees
+### deepsurv.satpred: survival neural network
+
 satpred.Rout: R/satpred.R
 utilities.Rout: R/utilities.R
 gbm_satpred.Rout: R/gbm_satpred.R
+deepsurv_satpred.Rout: R/deepsurv_satpred.R
 methods.Rout: R/methods.R
 pkgsExport.Rout: R/pkgsExport.R
 mod_cv.Rout: R/mod_cv.R
 mod_train.Rout: R/mod_train.R
 posthocfuns.Rout: R/posthocfuns.R
 satpredplots.Rout: R/satpredplots.R
+
+######################################################################
+
+## Examples
+data.Rout: data.R
+
+### Survival forest
+examples_rfsrc.Rout: examples_rfsrc.R data.rda
+
+### GBM
+examples_gbm.Rout: examples_gbm.R data.rda
+
+### deepsurv
+examples_deepsurv.Rout: examples_deepsurv.R data.rda
+deleteME.Rout: deleteME.R data.rda
+deleteME_load.Rout: deleteME_load.R data.rda deleteME.rda
+
+### Compare
+examples_compare.Rout: examples_compare.R data.rda examples_rfsrc.rda examples_gbm.rda examples_deepsurv.rda
 
 ######################################################################
 

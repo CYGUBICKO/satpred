@@ -68,3 +68,20 @@ NULL
 #' @keywords internal
 NULL
 
+#' Import and export gbm. See \code{\link[gbm]{gbm}}
+#'
+#' @importFrom gbm gbm
+#' @export gbm
+#' @name gbm
+#' @rdname pkgsExport
+#' @keywords internal
+NULL
+
+#' Import and export deepsurv. See \code{\link[survivalmodels]{deepsurv}}
+#'
+#' @importFrom survivalmodels deepsurv
+#' @export deepsurv
+#' @name deepsurv
+#' @rdname pkgsExport
+#' @keywords internal
+NULL

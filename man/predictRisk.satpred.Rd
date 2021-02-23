@@ -5,7 +5,7 @@
 \alias{predictRisk}
 \title{Extract predictions from satpred model}
 \usage{
-predictRisk.satpred(object, newdata, times, ...)
+\method{predictRisk}{satpred}(object, newdata, times, ...)
 }
 \description{
 Extract event probabilities from the fitted model.

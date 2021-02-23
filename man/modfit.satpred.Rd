@@ -4,7 +4,7 @@
 \alias{modfit.satpred}
 \title{Model fitting}
 \usage{
-\method{modfit}{satpred}(object, return_data = TRUE, ...)
+\method{modfit}{satpred}(object, return_data = FALSE, ...)
 }
 \description{
 Model fitting

@@ -211,7 +211,7 @@ varimp.gbm <- function(object, type = c("coef", "perm", "model"), relative = TRU
 #' @export
 
 predictRisk.gbm.satpred <- function(object, newdata, times, ...){
-	p <- 1 - predictSurvProb(object, newdata, times)
+	p <- 1 - predictSurvProb.satpred(object, newdata, times)
 	p
 }
 

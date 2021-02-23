@@ -19,6 +19,7 @@ modtune <- function(formula = formula(data), data = sys.parent()
 	mod_args[names(new_args)] <- new_args
 	best_args <- as.list(besTune[, hyper])
 	mod_args[names(best_args)] <- best_args
+	mod_args <- mod_args[!names(mod_args) %in% c("parallelize", "nclusters", "nfolds", "foldids")]
 	out <- list(result=result, besTune=besTune, modelfun = modfun, modelargs = mod_args)
 	out$terms <- Terms
 	out$call <- match.call()
@@ -30,7 +31,7 @@ modtune <- function(formula = formula(data), data = sys.parent()
 #'
 #' @export
 
-modfit.satpred <- function(object, return_data = TRUE, ...) {
+modfit.satpred <- function(object, return_data = FALSE, ...) {
 	new_args <- list(...)
 	modfun <- object$modelfun
 	mod_args <- object$modelargs

@@ -6,7 +6,7 @@ predtidy <- function(x)UseMethod("predtidy")
 cverror <- function(x, y = NULL, ...)UseMethod("cverror")
 
 #' @export
-modfit <- function(object, ...)UseMethod("modfit")
+modfit <- function(object, return_data = FALSE, ...)UseMethod("modfit")
 
 #' @export
 modtidy <- function(x)UseMethod("modtidy") 

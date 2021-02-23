@@ -6,6 +6,9 @@
 plot.rfsrc.satpred <- function(x, ..., show_best = TRUE, lsize = 0.3, pshape = "O") {
 	tune_df <- x$result
 	best_df <- x$besTune
+	tune_df$nodesize <- factor(tune_df$nodesize, labels=paste0("nodesize: ", unique(tune_df$nodesize)))
+	best_df <- x$besTune
+	best_df$nodesize <- factor(best_df$nodesize, labels=paste0("nodesize: ", unique(best_df$nodesize)))
 	p1 <- (ggplot(tune_df, aes(x = as.factor(mtry), y = error, group=as.factor(ntree), colour = as.factor(ntree)))
 		+ geom_point(shape = pshape)
 		+ geom_line(size = lsize)
@@ -216,4 +219,42 @@ plot.varimp <- function(x, ..., pos = 0.3, drop_zero = TRUE){
 	)
 	return(p1)
 }
+
+#' Customized theme for satpred plots
+#'
+#' Sets a theme for satpred and other ggplot objects
+#'
+#' @import ggplot2
+#' @export
+
+satpredtheme <- function(){
+   theme_set(theme_bw() +
+      theme(panel.spacing = grid::unit(0,"lines")
+      	, plot.title = element_text(hjust = 0.5)
+			, legend.position = "bottom"
+			, axis.ticks.y = element_blank()
+			, axis.text.x = element_text(size = 12)
+			, axis.text.y = element_text(size = 12)
+			, axis.title.x = element_text(size = 12)
+			, axis.title.y = element_text(size = 12)
+			, legend.title = element_text(size = 13, hjust = 0.5)
+			, legend.text = element_text(size = 13)
+			, panel.grid.major = element_blank()
+			, legend.key.size = unit(0.8, "cm")
+			, legend.key = element_rect(fill = "white")
+			, panel.spacing.y = unit(0.3, "lines")
+			, panel.spacing.x = unit(1, "lines")
+			, strip.background = element_blank()
+			, panel.border = element_rect(colour = "grey"
+				, fill = NA
+				, size = 0.8
+			)
+			, strip.text.x = element_text(size = 11
+				, colour = "black"
+				, face = "bold"
+			)
+      )
+   )
+}
+
 

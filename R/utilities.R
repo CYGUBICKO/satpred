@@ -105,10 +105,14 @@ pvimp.rfsrc <- function(model, newdata, nrep = 50){
 	N <- NROW(newdata)
 	vi <- sapply(xvars, function(x){
 		permute_df <- newdata[rep(seq(N), nrep), ]
-		permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
+		if (is.factor(permute_df[,x])||is.character(permute_df[,x])){
+			permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
+			permute_var <- factor(permute_var, levels = levels(permute_df[,x]))
+		} else {
+			permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
+		}
 		index <- rep(1:nrep, each = N)
 		permute_df[, x] <- permute_var
-		risk <- predict(model, newdata = permute_df, type = "risk")
 		perm_c <- unlist(lapply(split(permute_df, index), function(d){
 			survconcord.rfsrc(model, newdata = d, stats = FALSE)
 		}))
