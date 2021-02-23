@@ -40,6 +40,7 @@ modfit.satpred <- function(object, return_data = FALSE, ...) {
 		mod_args[names(new_args)] <- new_args
 	}
 	finalModel <- do.call(modfun, mod_args)
+        try(reticulate::py_save_object(finalModel$model, file="checkpoint.pkl"))
 	finalModel$terms <- object$terms
 	if (return_data) {
 		finalModel$modelData <- mod_args$data
