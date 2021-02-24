@@ -9,8 +9,8 @@ set.seed(8888)
 
 ### Cross-validation
 params_gbm <- expand.grid(shrinkage = seq(0.05, 0.1, length.out = 3)
-	, n.trees = c(3000, 4000, 5000), n.minobsinnode = c(5, 10)
-	, interaction.depth = c(1, 2)
+	, n.trees = c(800, 1000), n.minobsinnode = c(10, 15)
+	, interaction.depth = c(2, 4, 8)
 )
 tuned_gbm <- modtune(Surv(time, status) ~ ., train_df, distribution = "coxph", param_grid = params_gbm
 	, modfun = gbm.satpred, parallelize = TRUE

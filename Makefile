@@ -47,8 +47,6 @@ examples_gbm.Rout: examples_gbm.R data.rda
 
 ### deepsurv
 examples_deepsurv.Rout: examples_deepsurv.R data.rda
-deleteME.Rout: deleteME.R data.rda
-deleteME_load.Rout: deleteME_load.R data.rda deleteME.rda
 
 ### Compare
 examples_compare.Rout: examples_compare.R data.rda examples_rfsrc.rda examples_gbm.rda examples_deepsurv.rda

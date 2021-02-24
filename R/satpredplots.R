@@ -130,6 +130,7 @@ plot.Score <- function(x, ..., type = c("roc", "auc", "brier"), pos = 0.3){
 		)
 	} else if (type == "auc"){
 		df <- x$AUC$score
+		model_cols <- unique(df$model)
 		df$times <- as.factor(df$times)
 		p1 <- (ggplot(df, aes(x = times, y = AUC, group = model, colour = model))
 			+ geom_point(position = position_dodge(pos))
@@ -144,6 +145,7 @@ plot.Score <- function(x, ..., type = c("roc", "auc", "brier"), pos = 0.3){
 	} else {
 		df <- x$Brier$score
 		df$times <- as.factor(df$times)
+		model_cols <- unique(df$model)
 		p1 <- (ggplot(df, aes(x = times, y = Brier, group = model, colour = model))
 			+ geom_point(position = position_dodge(pos))
 			+ geom_pointrange(aes(ymin = lower, ymax = upper, colour = model), position = position_dodge(pos))

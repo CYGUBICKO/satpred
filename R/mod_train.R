@@ -36,11 +36,15 @@ modfit.satpred <- function(object, return_data = FALSE, ...) {
 	modfun <- object$modelfun
 	mod_args <- object$modelargs
 	if (length(new_args)) {
+		if (any(names(new_args) %in% "early_stopping")) mod_args$early_stopping <- new_args$early_stopping
 		new_args <- new_args[!names(new_args) %in% names(mod_args)]
 		mod_args[names(new_args)] <- new_args
 	}
+	if (any(names(mod_args) %in% "num_nodes")){
+		temp_nodes <- as.numeric(strsplit(as.character(mod_args$num_nodes), "\\[|\\]$|\\,")[[1]])
+		mod_args$num_nodes <- temp_nodes[!is.na(temp_nodes)]
+	}
 	finalModel <- do.call(modfun, mod_args)
-        try(reticulate::py_save_object(finalModel$model, file="checkpoint.pkl"))
 	finalModel$terms <- object$terms
 	if (return_data) {
 		finalModel$modelData <- mod_args$data
