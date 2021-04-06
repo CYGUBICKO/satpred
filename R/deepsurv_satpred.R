@@ -22,6 +22,10 @@ deepsurv.satpred <- function(formula = NULL, train_df = NULL
 	}
 	param_args <- as.list(param)
 	deepsurv_args[names(param_args)] <- param_args
+	deepsurv_args$activation <- activation
+	deepsurv_args$batch_norm <- batch_norm
+	deepsurv_args$frac <- frac
+	deepsurv_args$early_stopping <- early_stopping
 	new_args <- list(...)
 	if (length(new_args)) deepsurv_args[names(new_args)] <- new_args
 
@@ -138,7 +142,9 @@ get_indivsurv.deepsurv <- function(object, newdata) {
 	}
 	surv <- predict(object, newdata = newdata, type = "survival")
 	times <- as.numeric(colnames(surv))
-	out <- list(time = times, surv = surv, chaz = -log(surv))
+	times <- times[1:(length(times)-1)]
+	ss <- surv[, 1:length(times),drop=FALSE]
+	out <- list(time = times, surv = ss, chaz = -log(ss))
 	out$call <- match.call()
 	class(out) <- "satsurv"
 	out

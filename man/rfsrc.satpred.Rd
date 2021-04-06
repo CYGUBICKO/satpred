@@ -13,6 +13,7 @@ rfsrc.satpred(
   mtry = NULL,
   nodesize = NULL,
   splitrule = "logrank",
+  forest = FALSE,
   finalmod = FALSE,
   ...
 )

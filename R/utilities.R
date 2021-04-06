@@ -2,9 +2,9 @@
 #'
 #' @export
 rfsrc.satpred <- function(formula = NULL, train_df = NULL, test_df = NULL, param_grid = NULL
-	, ntree = 1000, mtry = NULL, nodesize = NULL, splitrule = "logrank", finalmod = FALSE, ...) {
+	, ntree = 1000, mtry = NULL, nodesize = NULL, splitrule = "logrank", forest = FALSE, finalmod = FALSE, ...) {
 	
-	rfsrc_args <- list(formula=formula, data=train_df, forest=TRUE)
+	rfsrc_args <- list(formula=formula, data=train_df)
 	if (is.null(param_grid)) {
 		if (is.null(mtry)) {
 			param <- expand.grid(ntree=ntree, splitrule=splitrule)
@@ -19,6 +19,7 @@ rfsrc.satpred <- function(formula = NULL, train_df = NULL, test_df = NULL, param
 	param_args <- as.list(param)
 #	names(param_args) <- param_args
 	rfsrc_args[names(param_args)] <- param_args
+	rfsrc_args$forest <- forest
 	new_args <- list(...)
 	if (length(new_args)) rfsrc_args[names(new_args)] <- new_args
 
@@ -27,7 +28,7 @@ rfsrc.satpred <- function(formula = NULL, train_df = NULL, test_df = NULL, param
 		param_match <- match(names(rfsrc_args), colnames(param), nomatch = FALSE)
 		error <- lapply(1:NROW(param), function(x){
 			rfsrc_args[args_match] <- param[x, param_match]
-			fit <- do.call("rfsrc.fast", rfsrc_args)
+			fit <- do.call("rfsrc", rfsrc_args)
 			if (is.null(test_df)) test_df <- train_df
 			pred <- predict(fit, test_df)
 			all_params <- names(param_args)

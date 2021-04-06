@@ -3,7 +3,7 @@
 #' @export
 gbm.satpred <- function(formula = NULL, train_df = NULL, test_df = NULL, distribution = "coxph", param_grid = NULL, n.trees = 1000, interaction.depth = 1, n.minobsinnode = 10, shrinkage = 0.1, finalmod = FALSE, ...) {
 	
-	gbm_args <- list(formula=formula, data=train_df, distribution=distribution)
+	gbm_args <- list(formula=formula, data=train_df)
 	if (is.null(param_grid)) {
 		if (is.null(shrinkage)) {
 			param <- expand.grid(n.trees=n.trees, n.minobsinnode=n.minobsinnode)
@@ -17,6 +17,7 @@ gbm.satpred <- function(formula = NULL, train_df = NULL, test_df = NULL, distrib
 	}
 	param_args <- as.list(param)
 	gbm_args[names(param_args)] <- param_args
+	gbm_args$distribution <- distribution
 	new_args <- list(...)
 	if (length(new_args)) gbm_args[names(new_args)] <- new_args
 
