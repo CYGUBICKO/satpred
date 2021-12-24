@@ -14,6 +14,24 @@ NULL
 #' @keywords internal
 NULL
 
+#' Import and export survfit. See \code{\link[survival]{survfit}} 
+#'
+#' @importFrom survival survfit
+#' @export survfit
+#' @name survfit
+#' @rdname pkgsExport
+#' @keywords internal
+NULL
+
+#' Import and export glmnetsurv. See \code{\link[glmnetsurv]{glmnetsurvfit}} 
+#'
+#' @importFrom glmnetsurv glmnetsurvfit
+#' @export glmnetsurvfit
+#' @name glmnetsurvfit
+#' @rdname pkgsExport
+#' @keywords internal
+NULL
+
 #' Import and export sindex. See \code{\link[prodlim]{sindex}}
 #'
 #' @importFrom prodlim sindex
@@ -59,7 +77,16 @@ NULL
 #' @keywords internal
 NULL
 
-#' Import and export rcorr.cens. See \code{\link[Hmisc]{rcorr.cens}}
+#' Import and export survConcordance. See \code{\link[survival]{survConcordance}} 
+#'
+#' @importFrom survival survConcordance
+#' @export survConcordance
+#' @name survConcordance
+#' @rdname pkgsExport
+#' @keywords internal
+NULL
+
+#' Import and export rcorr.cens. See \code{\link[Hmisc]{rcorr.cens}} 
 #'
 #' @importFrom Hmisc rcorr.cens
 #' @export rcorr.cens
@@ -68,7 +95,7 @@ NULL
 #' @keywords internal
 NULL
 
-#' Import and export gbm. See \code{\link[gbm]{gbm}}
+#' Import and export gbm. See \code{\link[gbm]{gbm}} 
 #'
 #' @importFrom gbm gbm
 #' @export gbm
@@ -77,7 +104,7 @@ NULL
 #' @keywords internal
 NULL
 
-#' Import and export deepsurv. See \code{\link[survivalmodels]{deepsurv}}
+#' Import and export deepsurv. See \code{\link[survivalmodels]{deepsurv}} 
 #'
 #' @importFrom survivalmodels deepsurv
 #' @export deepsurv

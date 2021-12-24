@@ -3,11 +3,14 @@
 \name{pkgsExport}
 \alias{pkgsExport}
 \alias{Surv}
+\alias{survfit}
+\alias{glmnetsurvfit}
 \alias{sindex}
 \alias{Score}
 \alias{rfsrc}
 \alias{rfsrc.fast}
 \alias{vimp}
+\alias{survConcordance}
 \alias{rcorr.cens}
 \alias{gbm}
 \alias{deepsurv}
@@ -16,6 +19,10 @@
 Import and export various functions from various packages
 
 Import and export Surv. See \code{\link[survival]{Surv}}
+
+Import and export survfit. See \code{\link[survival]{survfit}}
+
+Import and export glmnetsurv. See \code{\link[glmnetsurv]{glmnetsurvfit}}
 
 Import and export sindex. See \code{\link[prodlim]{sindex}}
 
@@ -26,6 +33,8 @@ Import and export rfsrc. See \code{\link[randomForestSRC]{rfsrc}}
 Import and export rfsrc.fast. See \code{\link[randomForestSRC]{rfsrc.fast}}
 
 Import and export vimp. See \code{\link[randomForestSRC]{vimp}}
+
+Import and export survConcordance. See \code{\link[survival]{survConcordance}}
 
 Import and export rcorr.cens. See \code{\link[Hmisc]{rcorr.cens}}
 

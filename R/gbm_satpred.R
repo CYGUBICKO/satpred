@@ -3,21 +3,20 @@
 #' @export
 gbm.satpred <- function(formula = NULL, train_df = NULL, test_df = NULL, distribution = "coxph", param_grid = NULL, n.trees = 1000, interaction.depth = 1, n.minobsinnode = 10, shrinkage = 0.1, finalmod = FALSE, ...) {
 	
-	gbm_args <- list(formula=formula, data=train_df)
+	gbm_args <- list(formula=formula, data=train_df, distribution=distribution)
 	if (is.null(param_grid)) {
 		if (is.null(shrinkage)) {
-			param <- expand.grid(n.trees=n.trees, n.minobsinnode=n.minobsinnode)
+			param <- expand.grid(n.trees=n.trees, n.minobsinnode=n.minobsinnode, stringsAsFactors=FALSE)
 		} else if (is.null(interaction.depth)) {
-			param <- expand.grid(n.trees=n.trees, shrinkage=shrinkage, n.minobsinnode=n.minobsinnode)
+			param <- expand.grid(n.trees=n.trees, shrinkage=shrinkage, n.minobsinnode=n.minobsinnode, stringsAsFactors=FALSE)
 		} else {
-			param <- expand.grid(n.trees=n.trees, shrinkage=shrinkage, interaction.depth=interaction.depth, n.minobsinnode=n.minobsinnode)
+			param <- expand.grid(n.trees=n.trees, shrinkage=shrinkage, interaction.depth=interaction.depth, n.minobsinnode=n.minobsinnode, stringsAsFactors=FALSE)
 		}
 	} else {
 		param <- param_grid
 	}
 	param_args <- as.list(param)
 	gbm_args[names(param_args)] <- param_args
-	gbm_args$distribution <- distribution
 	new_args <- list(...)
 	if (length(new_args)) gbm_args[names(new_args)] <- new_args
 
@@ -66,7 +65,7 @@ cverror.gbm <- function(x, y = NULL, ...){
 #'
 #' @keywords internal
 
-survconcord.gbm <- function(object, newdata = NULL, stats = FALSE) {
+survconcord.gbm <- function(object, newdata = NULL, stats = FALSE, ...) {
 	if (is.null(newdata)) newdata <- object$modelData
 	pred <- predict(object, newdata=newdata, n.trees=object$n.trees)
 	class(pred) <- c(class(pred), "gbm")
@@ -150,37 +149,69 @@ get_indivsurv.gbm <- function(object, newdata) {
 #'
 #' @keywords internal
 
-pvimp.gbm <- function(model, newdata, nrep = 50){
+pvimp.gbm <- function(model, newdata, nrep = 20, parallelize = TRUE, nclusters = parallel::detectCores(), ...){
 	# Overall score
-	overall_c <- survconcord.gbm(model, newdata = newdata, stats = FALSE)
+	overall_c <- survconcord.gbm(model, newdata = newdata, stats = FALSE, ...)
 	xvars <- all.vars(formula(delete.response(terms(model))))
 	N <- NROW(newdata)
-	vi <- sapply(xvars, function(x){
-		permute_df <- newdata[rep(seq(N), nrep), ]
-		if (is.factor(permute_df[,x])||is.character(permute_df[,x])){
-			permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
-			permute_var <- factor(permute_var, levels = levels(permute_df[,x]))
-		} else {
-			permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
+	if (parallelize) {
+		## Setup parallel because serial takes a lot of time. Otherwise you can turn it off
+		nn <- min(parallel::detectCores(), nclusters)
+		if (nn < 2){
+			foreach::registerDoSEQ()
+		} else{
+			cl <-  parallel::makeCluster(nn)
+			doParallel::registerDoParallel(cl)
+			on.exit(parallel::stopCluster(cl))
 		}
-		index <- rep(1:nrep, each = N)
-		permute_df[, x] <- permute_var
-		perm_c <- unlist(lapply(split(permute_df, index), function(d){
-			survconcord.gbm(model, newdata = d, stats = FALSE)
-		}))
-		mean((overall_c - perm_c)/overall_c)
-	})
-	return(vi)
+
+		x <- NULL
+		permute_df <- newdata[rep(seq(N), nrep), ]
+		vi <- foreach(x = xvars, .export="survconcord.gbm") %dopar% {
+			if (is.factor(permute_df[,x])) {
+				permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
+				permute_var <- factor(permute_var, levels = levels(permute_df[,x]))
+			} else {
+				permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
+			}
+			index <- rep(1:nrep, each = N)
+			permute_df[, x] <- permute_var
+			perm_c <- unlist(lapply(split(permute_df, index), function(d){
+				survconcord.gbm(model, newdata = droplevels(d), stats = FALSE, ...)
+			}))
+			est <- mean((overall_c - perm_c)/overall_c)
+			names(est) <- x
+			est
+		}
+	} else {
+		permute_df <- newdata[rep(seq(N), nrep), ]
+		vi <- sapply(xvars, function(x){
+			if (is.factor(permute_df[,x])) {
+				permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
+				permute_var <- factor(permute_var, levels = levels(permute_df[,x]))
+			} else {
+				permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
+			}
+			index <- rep(1:nrep, each = N)
+			permute_df[, x] <- permute_var
+			perm_c <- unlist(lapply(split(permute_df, index), function(d){
+				survconcord.gbm(model, newdata = droplevels(d), stats = FALSE, ...)
+			}))
+			mean((overall_c - perm_c)/overall_c)
+		})
+	}
+	return(unlist(vi))
 }
+
 
 #' Compute variable importance gbm
 #'
 #' @keywords internal
 
-varimp.gbm <- function(object, type = c("coef", "perm", "model"), relative = TRUE, newdata, nrep = 20, ...){
+varimp.gbm <- function(object, type = c("coef", "perm", "model"), relative = TRUE, newdata, nrep = 20, parallelize = TRUE, nclusters = parallel::detectCores(), ...){
 	type <- match.arg(type)
 	if (type=="perm"){
-		out <- data.frame(Overall = get_pvimp(object, newdata, nrep))
+		out <- data.frame(Overall = get_pvimp(object, newdata, nrep, parallelize = parallelize, nclusters = nclusters, ...))
 	} else {
 		new_args <- list(...)
 		new_args$object <- object
@@ -212,7 +243,7 @@ varimp.gbm <- function(object, type = c("coef", "perm", "model"), relative = TRU
 #' @export
 
 predictRisk.gbm.satpred <- function(object, newdata, times, ...){
-	p <- 1 - predictSurvProb.satpred(object, newdata, times)
+	p <- 1 - predictSurvProb.gbm.satpred(object, newdata, times)
 	p
 }
 

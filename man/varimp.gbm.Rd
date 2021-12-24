@@ -10,6 +10,8 @@
   relative = TRUE,
   newdata,
   nrep = 20,
+  parallelize = TRUE,
+  nclusters = parallel::detectCores(),
   ...
 )
 }

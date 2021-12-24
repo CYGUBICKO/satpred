@@ -11,6 +11,8 @@ get_varimp(
   newdata,
   nrep = 20,
   modelname = "model1",
+  parallelize = TRUE,
+  nclusters = parallel::detectCores(),
   ...
 )
 }

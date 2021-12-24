@@ -2,7 +2,7 @@
 % Please edit documentation in R/satpredplots.R
 \name{satpredtheme}
 \alias{satpredtheme}
-\title{Customized theme for satpred plots}
+\title{Set theme for satpred plots}
 \usage{
 satpredtheme()
 }

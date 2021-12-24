@@ -4,7 +4,18 @@
 \alias{pvimp.deepsurv}
 \title{Permutation variable importance method for deepsurv}
 \usage{
-\method{pvimp}{deepsurv}(model, newdata, nrep = 50)
+\method{pvimp}{deepsurv}(
+  model,
+  newdata,
+  nrep = 20,
+  parallelize = TRUE,
+  nclusters = parallel::detectCores(),
+  model_matrix = FALSE,
+  rhs_formula = formula(model)[c(1, 3)],
+  scale = TRUE,
+  center = TRUE,
+  ...
+)
 }
 \description{
 Permutation variable importance method for deepsurv

@@ -4,7 +4,7 @@
 \alias{plot.varimp}
 \title{Generic method for plotting variable importance of various models}
 \usage{
-\method{plot}{varimp}(x, ..., pos = 0.3, drop_zero = TRUE)
+\method{plot}{varimp}(x, ..., pos = 0.5, drop_zero = TRUE)
 }
 \description{
 Generic method for plotting variable importance of various models

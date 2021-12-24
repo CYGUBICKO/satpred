@@ -5,7 +5,7 @@
 \alias{predictSurvProb}
 \title{Predict survival probabilities at various time points}
 \usage{
-predictSurvProb.deepsurv(object, newdata, times, ...)
+\method{predictSurvProb}{deepsurv}(object, newdata, times, ...)
 }
 \value{
 a matrix of probabilities with as many rows as the rows of the \code{newdata} and as many columns as number of time points (\code{times}).

@@ -4,7 +4,7 @@
 \alias{survconcord.deepsurv}
 \title{Compute the concordance statistic for the deepsurv model}
 \usage{
-\method{survconcord}{deepsurv}(object, newdata = NULL, stats = FALSE)
+\method{survconcord}{deepsurv}(object, newdata = NULL, stats = FALSE, ...)
 }
 \description{
 The function computes the agreement between the observed response and the predictor.

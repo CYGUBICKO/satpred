@@ -4,7 +4,7 @@
 \alias{survconcord.gbm}
 \title{Compute the concordance statistic for the pcoxtime model}
 \usage{
-\method{survconcord}{gbm}(object, newdata = NULL, stats = FALSE)
+\method{survconcord}{gbm}(object, newdata = NULL, stats = FALSE, ...)
 }
 \description{
 The function computes the agreement between the observed response and the predictor.

@@ -4,7 +4,7 @@
 \alias{plot.Score}
 \title{Prediction performance}
 \usage{
-\method{plot}{Score}(x, ..., type = c("roc", "auc", "brier"), pos = 0.3)
+\method{plot}{Score}(x, ..., type = c("roc", "auc", "brier"), pos = 0.3, psize = 0.3)
 }
 \arguments{
 \item{x}{\code{\link[riskRegression]{Score}} object. See examples.}

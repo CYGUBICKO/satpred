@@ -1,6 +1,7 @@
 #' Implemented packages
 #'
 #' @export
+
 deepsurv.satpred <- function(formula = NULL, train_df = NULL
 	, test_df = NULL, num_nodes = list(h1 = c(32, 32))
 	, param_grid = NULL, activation = "relu", dropout = 0.1
@@ -11,21 +12,17 @@ deepsurv.satpred <- function(formula = NULL, train_df = NULL
 	deepsurv_args <- list(formula=formula, data=train_df, activation=activation, batch_norm = batch_norm, frac = frac, early_stopping = early_stopping)
 	if (is.null(param_grid)) {
 		if (is.null(epochs)) {
-			param <- expand.grid(learning_rate=learning_rate)
+			param <- expand.grid(learning_rate=learning_rate, stringsAsFactors=FALSE)
 		} else if (is.null(dropout)) {
-			param <- expand.grid(epochs=epochs, learning_rate=learning_rate)
+			param <- expand.grid(epochs=epochs, learning_rate=learning_rate, stringsAsFactors=FALSE)
 		} else {
-			param <- expand.grid(epochs=epochs, dropout=dropout, learning_rate=learning_rate)
+			param <- expand.grid(epochs=epochs, dropout=dropout, learning_rate=learning_rate, stringsAsFactors=FALSE)
 		}
 	} else {
 		param <- param_grid
 	}
 	param_args <- as.list(param)
 	deepsurv_args[names(param_args)] <- param_args
-	deepsurv_args$activation <- activation
-	deepsurv_args$batch_norm <- batch_norm
-	deepsurv_args$frac <- frac
-	deepsurv_args$early_stopping <- early_stopping
 	new_args <- list(...)
 	if (length(new_args)) deepsurv_args[names(new_args)] <- new_args
 
@@ -80,7 +77,7 @@ cverror.deepsurv <- function(x, y = NULL, ...){
 #'
 #' @keywords internal
 
-survconcord.deepsurv <- function(object, newdata = NULL, stats = FALSE) {
+survconcord.deepsurv <- function(object, newdata = NULL, stats = FALSE, ...) {
 	if (is.null(newdata)) newdata <- object$modelData
 	pred <- predict(object, newdata=newdata, type="risk")
 	class(pred) <- c(class(pred), "deepsurv")
@@ -143,7 +140,7 @@ get_indivsurv.deepsurv <- function(object, newdata) {
 	surv <- predict(object, newdata = newdata, type = "survival")
 	times <- as.numeric(colnames(surv))
 	times <- times[1:(length(times)-1)]
-	ss <- surv[, 1:length(times),drop=FALSE]
+	ss <- surv[,1:length(times), drop=FALSE]
 	out <- list(time = times, surv = ss, chaz = -log(ss))
 	out$call <- match.call()
 	class(out) <- "satsurv"
@@ -154,40 +151,110 @@ get_indivsurv.deepsurv <- function(object, newdata) {
 #'
 #' @keywords internal
 
-pvimp.deepsurv <- function(model, newdata, nrep = 50){
+pvimp.deepsurv <- function(model, newdata, nrep = 20, parallelize = TRUE, nclusters = parallel::detectCores(), model_matrix = FALSE, rhs_formula = formula(model)[c(1,3)], scale = TRUE, center = TRUE, ...){
 	# Overall score
-	overall_c <- survconcord.deepsurv(model, newdata = newdata, stats = FALSE)
-	xvars <- all.vars(formula(delete.response(terms(model))))
+	Terms <- terms(model)
+	xvars <- all.vars(formula(delete.response(Terms)))
+	ynames <- deparse(formula(Terms)[[2]])
+	eventlab <- trimws(gsub(".*\\,|\\)", "", ynames))
+	timelab <- gsub(".*\\(|\\,.*", "", ynames)
+	form <- rhs_formula 
 	N <- NROW(newdata)
-	vi <- sapply(xvars, function(x){
-		permute_df <- newdata[rep(seq(N), nrep), ]
-		if (is.factor(permute_df[,x])||is.character(permute_df[,x])){
-			permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
-			permute_var <- factor(permute_var, levels = levels(permute_df[,x]))
-		} else {
-			permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
+	if (model_matrix) {
+		xvars <- all.vars(delete.response(form))
+		temp_df <- model.matrix(form, newdata)[,-1, drop=FALSE]
+		if (center!=TRUE || center!=FALSE) {
+			temp_df <- temp_df[, names(center), drop=FALSE]
+		} 
+		temp_df <- as.data.frame(scale(temp_df, center=center, scale=scale))
+		temp_df[[eventlab]] <- newdata[[eventlab]]
+		temp_df[[timelab]] <- newdata[[timelab]]
+	} else {
+		temp_df <- newdata
+	}
+	overall_c <- survconcord.deepsurv(model, newdata = temp_df, stats = FALSE, ...)
+	if (parallelize) {
+		## Setup parallel because serial takes a lot of time. Otherwise you can turn it off
+		nn <- min(parallel::detectCores(), nclusters)
+		if (nn < 2){
+			foreach::registerDoSEQ()
+		} else{
+			cl <-  parallel::makeCluster(nn)
+			doParallel::registerDoParallel(cl)
+			on.exit(parallel::stopCluster(cl))
 		}
-		index <- rep(1:nrep, each = N)
-		permute_df[, x] <- permute_var
-		perm_c <- unlist(lapply(split(permute_df, index), function(d){
-			survconcord.deepsurv(model, newdata = d, stats = FALSE)
-		}))
-		mean((overall_c - perm_c)/overall_c)
-	})
-	return(vi)
+
+		x <- NULL
+		permute_df <- newdata[rep(seq(N), nrep), ]
+		events <- permute_df[[eventlab]] 
+		times <-  permute_df[[timelab]]
+		vi <- foreach(x = xvars, .packages="survivalmodels", .export=c("deepsurv", "survconcord.deepsurv")) %dopar% {
+			if (is.factor(permute_df[,x])) {
+				permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
+				permute_var <- factor(permute_var, levels = levels(permute_df[,x]))
+			} else {
+				permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
+			}
+			index <- rep(1:nrep, each = N)
+			permute_df[, x] <- permute_var
+			if (model_matrix) {
+				permute_df <- model.matrix(form, permute_df)[,-1, drop=FALSE]
+				if (center!=TRUE || center!=FALSE) {
+					permute_df <- permute_df[, names(center), drop=FALSE]
+				} 
+				permute_df <- as.data.frame(scale(permute_df, center=center, scale=scale))
+				permute_df[[eventlab]] <- events 
+				permute_df[[timelab]] <- times 
+			}
+			perm_c <- unlist(lapply(split(permute_df, index), function(d){
+				survconcord.deepsurv(model, newdata = droplevels(d), stats = FALSE, ...)
+			}))
+			est <- mean((overall_c - perm_c)/overall_c)
+			names(est) <- x
+			est
+		}
+	} else {
+		permute_df <- newdata[rep(seq(N), nrep), ]
+		events <- permute_df[[eventlab]] 
+		times <-  permute_df[[timelab]]
+		vi <- sapply(xvars, function(x){
+			if (is.factor(permute_df[,x])) {
+				permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
+				permute_var <- factor(permute_var, levels = levels(permute_df[,x]))
+			} else {
+				permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
+			}
+			index <- rep(1:nrep, each = N)
+			permute_df[, x] <- permute_var
+			if (model_matrix) {
+				permute_df <- model.matrix(form, permute_df)[,-1, drop=FALSE]
+				if (center!=TRUE || center!=FALSE) {
+					permute_df <- permute_df[, names(center), drop=FALSE]
+				} 
+				permute_df <- as.data.frame(scale(permute_df, center=center, scale=scale))
+				permute_df[[eventlab]] <- events 
+				permute_df[[timelab]] <- times 
+			}
+			perm_c <- unlist(lapply(split(permute_df, index), function(d){
+				survconcord.deepsurv(model, newdata = droplevels(d), stats = FALSE, ...)
+			}))
+			mean((overall_c - perm_c)/overall_c)
+		})
+	}
+	return(unlist(vi))
 }
 
 #' Compute variable importance deepsurv
 #'
 #' @keywords internal
 
-varimp.deepsurv <- function(object, type = c("coef", "perm", "model"), relative = TRUE, newdata, nrep = 20, ...){
+varimp.deepsurv <- function(object, type = c("coef", "perm", "model"), relative = TRUE, newdata, nrep = 20, parallelize = TRUE, nclusters = parallel::detectCores(), ...){
 	type <- match.arg(type)
 	if (type!="perm")warning(paste0("type = ", type, " not implemented yet, using 'perm'"))
 	if (type=="perm"){
-		out <- data.frame(Overall = get_pvimp(object, newdata, nrep))
+		out <- data.frame(Overall = get_pvimp(object, newdata, nrep, parallelize = parallelize, nclusters = nclusters, ...))
 	} else {
-		out <- data.frame(Overall = get_pvimp(object, newdata, nrep))
+		out <- data.frame(Overall = get_pvimp(object, newdata, nrep, parallelize = parallelize, nclusters = nclusters, ...))
 	}
 	out$sign <- sign(out$Overall)
 	out$Overall <- abs(out$Overall)

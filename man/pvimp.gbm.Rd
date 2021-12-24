@@ -4,7 +4,14 @@
 \alias{pvimp.gbm}
 \title{Permutation variable importance method for gbm}
 \usage{
-\method{pvimp}{gbm}(model, newdata, nrep = 50)
+\method{pvimp}{gbm}(
+  model,
+  newdata,
+  nrep = 20,
+  parallelize = TRUE,
+  nclusters = parallel::detectCores(),
+  ...
+)
 }
 \description{
 Permutation variable importance method for gbm

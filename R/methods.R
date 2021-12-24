@@ -1,4 +1,3 @@
-#'
 #' @keywords internal
 predtidy <- function(x)UseMethod("predtidy") 
 
@@ -18,10 +17,10 @@ get_avesurv <- function(object, ...)UseMethod("get_avesurv")
 get_indivsurv <- function(object, newdata)UseMethod("get_indivsurv")
 
 #' @keywords internal
-survconcord <- function(object, newdata = NULL, stats = FALSE)UseMethod("survconcord")
+survconcord <- function(object, newdata = NULL, stats = FALSE, ...)UseMethod("survconcord")
 
 #' @keywords internal
-pvimp <- function(model, newdata, nrep = 50)UseMethod("pvimp")
+pvimp <- function(model, newdata, nrep = 20, nclusters = parallel::detectCores(), ...)UseMethod("pvimp")
 
 #' @keywords internal
-varimp <- function(object, type = c("coef", "perm", "model"), relative = TRUE, newdata, nrep = 20, ...)UseMethod("varimp")
+varimp <- function(object, type = c("coef", "perm", "model"), relative = TRUE, newdata, nrep = 20, nclusters = parallel::detectCores(), ...)UseMethod("varimp")

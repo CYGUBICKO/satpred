@@ -4,7 +4,14 @@
 \alias{get_pvimp}
 \title{Permutation variable importance}
 \usage{
-get_pvimp(model, newdata, nrep = 50)
+get_pvimp(
+  model,
+  newdata,
+  nrep = 20,
+  parallelize = TRUE,
+  nclusters = parallel::detectCores(),
+  ...
+)
 }
 \description{
 Computes the relative importance based on random permutation of focal variable for various survival models.

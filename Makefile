@@ -68,6 +68,9 @@ check-package:
 update-doc:
 	echo "devtools::document('.')" | R --slave
 
+install:
+	make update-doc && make build-package && make install-package
+
 ######################################################################
 
 ### Makestuff

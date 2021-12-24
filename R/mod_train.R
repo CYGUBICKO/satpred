@@ -10,9 +10,8 @@ modtune <- function(formula = formula(data), data = sys.parent()
 	mod_args <- list(formula = formula, data = data, modfun = modfun, param_grid = param_grid, nfolds = nfolds, foldids = foldids)
 	if (length(new_args)) mod_args[names(new_args)] <- new_args
 	default_args <- as.list(args(modfun))
-	default_args <- default_args[!names(default_args) %in% c("train_df", "test_df", "...", "")]
-	default_args <- default_args[!names(default_args) %in% names(mod_args)]
-	mod_args[names(default_args)] <- default_args
+	default_args <- default_args[!names(default_args) %in% c("train_df", "test_df", "...", "", names(mod_args))]
+	if (length(default_args)) mod_args[names(default_args)] <- default_args
 	cv <- do.call("modcv", mod_args)
 	hyper <- colnames(cv)[!colnames(cv) %in% c("fold", "error")]
 	form <- as.formula(paste0("error~", paste0(hyper, collapse = "+")))
@@ -23,7 +22,7 @@ modtune <- function(formula = formula(data), data = sys.parent()
 	best_args <- as.list(besTune[, hyper])
 	mod_args[names(best_args)] <- best_args
 	default_args <- default_args[!names(default_args) %in% names(best_args)]
-	mod_args[names(default_args)] <- default_args
+	if (length(default_args)) mod_args[names(default_args)] <- default_args 
 	mod_args$finalmod <- TRUE
 	mod_args <- mod_args[!names(mod_args) %in% c("parallelize", "nclusters", "nfolds", "foldids")]
 	out <- list(result=result, besTune=besTune, modelfun = modfun, modelargs = mod_args)
@@ -46,7 +45,7 @@ modfit.satpred <- function(object, return_data = FALSE, ...) {
 		new_args <- new_args[!names(new_args) %in% names(mod_args)]
 		mod_args[names(new_args)] <- new_args
 	}
-	if (any(names(mod_args) %in% "num_nodes")){
+	if (any(names(mod_args) %in% "num_nodes")) {
 		temp_nodes <- as.numeric(strsplit(as.character(mod_args$num_nodes), "\\[|\\]$|\\,")[[1]])
 		mod_args$num_nodes <- temp_nodes[!is.na(temp_nodes)]
 	}
@@ -56,7 +55,7 @@ modfit.satpred <- function(object, return_data = FALSE, ...) {
 		finalModel$modelData <- mod_args$data
 	}
 	finalModel$call <- match.call()
-	if (inherits(finalModel, "gbm")){
+	if (inherits(finalModel, "gbm")) {
 		class(finalModel) <- c("gbm.satpred", class(finalModel), "satpred")
 	} else {
 		class(finalModel) <- c(class(finalModel), "satpred")

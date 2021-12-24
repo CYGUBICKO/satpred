@@ -4,7 +4,7 @@
 \alias{get_survconcord}
 \title{Compute the concordance statistic for the pcoxtime model}
 \usage{
-get_survconcord(object, newdata = NULL, stats = FALSE)
+get_survconcord(object, newdata = NULL, stats = FALSE, ...)
 }
 \description{
 The function computes the agreement between the observed response and the predictor.
