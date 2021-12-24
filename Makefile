@@ -9,6 +9,9 @@ current: target
 vim_session:
 	bash -cl "vmt notes.md"
 
+setssh:
+	git remote set-url origin git@github.com:cygubicko/satpred.git
+
 ######################################################################
 
 Sources += $(wildcard *.R *.md. *.Rnw)
