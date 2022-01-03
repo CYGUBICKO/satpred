@@ -1,3 +1,7 @@
+#' Generate probabilities for TDC brier score
+#'
+#' @keywords internal
+
 brierProb <- function(mod, newdata, time.eval, idvar
 		, ...
 		, coefficients=mod$coefficientsd
@@ -38,6 +42,9 @@ brierProb <- function(mod, newdata, time.eval, idvar
 	return(RES)
 }
 
+#' Helper function for the TDC brier score
+#'
+#' @keywords internal
 
 ## Directly copied (with some few edits) from LTRCforests package
 .shatfunc2 <- function(Ni, data, pred, tpnt, tau, idvar){
@@ -129,7 +136,11 @@ brierProb <- function(mod, newdata, time.eval, idvar
 	return(Shat_temp[1, -match(TestT, tpntLod)])
 }
 
-one_brierscore <- function(mod
+#' Helper function for the TDC brier score
+#'
+#' @keywords internal
+
+one_ibsTDC <- function(mod
 	, newdata
 	, time.eval=NULL
 	, idvar
@@ -142,6 +153,7 @@ one_brierscore <- function(mod
 	if (is.null(time.eval)) {
 		time.eval <- sort(unique(y[,2]))
 	}
+	time.eval <- union(0, time.eval)
 	if (NCOL(y)==2)stop("Only handles Surv(time1, time2, event) format models. For other formats use see ?pec::pec or ?riskRegression::Score!", call.=FALSE)
 	pred <- brierProb(mod=mod, newdata=newdata, time.eval=time.eval, idvar=idvar, coefficients=coefficients, method=method, ...)
 	
@@ -150,17 +162,21 @@ one_brierscore <- function(mod
 		IBS <- LTRCforests::sbrier_ltrc(obj=y, id=pred$survival.id, pred=pred, type="IBS")
 		score <- list(BS=BS, IBS=IBS)
 		attr(score, "type") <- type
-		class(score) <- "score"
+		class(score) <- "ibsTDC"
 	} else {
 		score <- LTRCforests::sbrier_ltrc(obj=y, id=pred$survival.id, pred=pred, type=type)
 		attr(score, "type") <- type
-		class(score) <- c(class(score), "score")
+		class(score) <- c("ibsTDC", class(score))
 	}
 	if (type=="IBS"||type=="both") {
 		attr(score, "ibslabel") <- paste0("IBS[", min(time.eval), ";", max(time.eval), "]")
 	}
 	return(score)
 }
+
+#' Create resample indices or data frame for a TDC survival data
+#'
+#' @export
 
 resamplesTDC <- function(df, nreps, idvar, return_index=TRUE, ...) {
 	mergefun <- function(df, indices, idvar, return_index) {
@@ -182,43 +198,85 @@ resamplesTDC <- function(df, nreps, idvar, return_index=TRUE, ...) {
 	ind <- unique(df[, idvar])
 	N <- length(ind)
 	out <- replicate(nreps
-		, mergefun(df, sort(sample(ind,size=N,replace=TRUE)), idvar=idvar, return_index=return_index)
+		, mergefun(df=df, sort(sample(ind,size=N,replace=TRUE)), idvar=idvar, return_index=return_index)
 		, simplify=FALSE
 	)
 	return(out)
 }
 
-get_brierscore <- function(mod
+#' Compute brier or integrated brier score for a TDC survival data
+#'
+#' @export
+
+get_ibsTDC <- function(mod
 	, newdata
-	, time.eval=NULL
 	, idvar
+	, time.eval=NULL
 	, type=c("BS", "IBS", "both")
 	, nreps = 50
 	, prop = c(0.025, 0.5, 0.975)
+	, parallelize = FALSE
+	, nclusters = 1
 	, ...
 	, coefficients=mod$coefficientsd
 	, method=mod$method) {
+	
+	if (missing(idvar)) {
+		stop("Specify id column (idvar) or if not in the newdata, add id column corresponding to row number.")
+	}
 	type <- match.arg(type)
 	if (nreps==1) {
 		resamples_index <- list(list(index=1:NROW(newdata), newID=newdata[,idvar]))
 	} else {
 		resamples_index <- resamplesTDC(newdata, nreps, idvar, return_index=TRUE, ...)
 	}
-	est <- lapply(resamples_index, function(x){
-		index <- x$index
-		newID <- x$newID
-		df <- newdata[index,,drop=FALSE]
-		df[, idvar] <- newID
-		est <- one_brierscore(mod=mod
-			, newdata=df
-			, time.eval=time.eval
-			, idvar=idvar
-			, type=type
-			, coefficients=coefficients
-			, method=method
-		)
-		return(est)
-	})
+
+
+	if (parallelize) {
+		nn <- min(parallel::detectCores(), nclusters)
+		if (nn < 2){
+			foreach::registerDoSEQ()
+		} else{
+			cl <-  parallel::makeCluster(nn)
+			doParallel::registerDoParallel(cl)
+			on.exit(parallel::stopCluster(cl))
+		}
+		est <- foreach(x = 1:length(resamples_index), .export=c("one_ibsTDC", ".shatfunc2", "brierProb")) %dopar% {
+			index <- resamples_index[[x]]$index
+			newID <- resamples_index[[x]]$newID
+			df <- newdata[index,,drop=FALSE]
+			df[, idvar] <- newID
+			est <- one_ibsTDC(mod=mod
+				, newdata=df
+				, time.eval=time.eval
+				, idvar=idvar
+				, type=type
+				, coefficients=coefficients
+				, method=method
+				, ...
+			)
+			est
+		}
+
+	} else {
+		est <- lapply(resamples_index, function(x){
+			index <- x$index
+			newID <- x$newID
+			df <- newdata[index,,drop=FALSE]
+			df[, idvar] <- newID
+			est <- one_ibsTDC(mod=mod
+				, newdata=df
+				, time.eval=time.eval
+				, idvar=idvar
+				, type=type
+				, coefficients=coefficients
+				, method=method
+				, ...
+			)
+			return(est)
+		})
+	}
+
 	temp <- attr(est[[1]], "ibslabel")
 	if (type=="IBS") {
 		out <- do.call(rbind, est)
@@ -244,23 +302,29 @@ get_brierscore <- function(mod
 		out <- list(BS=BS, IBS=IBS)
 	}
 	attr(out, "type") <- type
-	class(out) <- c(class(out), "score")
+	class(out) <- c("ibsTDC", class(out))
 	return(out)
 }
 
-plot.score <- function(x, ..., which.plot=c("BS", "IBS", "both"), plotit=TRUE) {
+#' Plot brier or integrated brier score estimates
+#'
+#' @import ggplot2
+#' @export
+
+plot.ibsTDC <- function(x, ..., which.plot=c("BS", "IBS", "both"), plotit=TRUE) {
 	type <- attr(x, "type")
 	which.plot <- match.arg(which.plot)
 	if (which.plot!=type && type!="both") {
 		which.plot <- type
-		message("type in get_brierscore is not the same as the specified one in which.plot, sure?")
+		message("type in get_ibsTDC is not the same as the specified one in which.plot, sure?")
 	}
 	if (which.plot=="both") {
 		BS <- x$BS
 		IBS <- x$IBS
 		BS <- (ggplot(BS, aes(x=time, y=estimate))
-			+ geom_line(aes(y=lower))
-			+ geom_line(aes(y=upper))
+			+ geom_line()
+			+ geom_line(aes(y=lower), lty=2)
+			+ geom_line(aes(y=upper), lty=2)
 			+ labs(x="Time", y="Brier score")
 		)
 		IBS <- (ggplot(IBS, aes(x=time, y=estimate))
@@ -268,27 +332,30 @@ plot.score <- function(x, ..., which.plot=c("BS", "IBS", "both"), plotit=TRUE) {
 			+ labs(x="Time", y="Integrated Brier Score")
 		)
 		if (plotit) {
-			BS
-			IBS
+			print(BS)
+			print(IBS)
 		}
 		invisible(list(BS=BS, IBS=IBS))
 	} else if (which.plot=="BS") {
-		BS <- (ggplot(x$BS, aes(x=time, y=estimate))
-			+ geom_line(aes(y=lower))
-			+ geom_line(aes(y=upper))
+		if (type=="both") x <- x$BS
+		BS <- (ggplot(x, aes(x=time, y=estimate))
+			+ geom_line()
+			+ geom_line(aes(y=lower),lty=2)
+			+ geom_line(aes(y=upper), lty=2)
 			+ labs(x="Time", y="Brier score")
 		)
 		if (plotit) {
-			BS
+			print(BS)
 		}
 		invisible(BS)
 	} else {
-		IBS <- (ggplot(x$IBS, aes(x=time, y=estimate))
+		if (type=="both") x <- x$IBS
+		IBS <- (ggplot(x, aes(x=time, y=estimate))
 			+ geom_pointrange(aes(ymin=lower, ymax=upper))
 			+ labs(x="Time", y="Integrated Brier Score")
 		)
 		if (plotit) {
-			IBS
+			print(IBS)
 		}
 		invisible(IBS)
 	}

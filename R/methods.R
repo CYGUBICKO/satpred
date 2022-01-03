@@ -24,3 +24,4 @@ pvimp <- function(model, newdata, nrep = 20, nclusters = parallel::detectCores()
 
 #' @keywords internal
 varimp <- function(object, type = c("coef", "perm", "model"), relative = TRUE, newdata, nrep = 20, nclusters = parallel::detectCores(), ...)UseMethod("varimp")
+
