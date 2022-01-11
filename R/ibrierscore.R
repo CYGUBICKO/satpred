@@ -219,7 +219,8 @@ get_ibsTDC <- function(mod
 	, nclusters = 1
 	, ...
 	, coefficients=mod$coefficientsd
-	, method=mod$method) {
+	, method=mod$method
+	, modelname=class(mod)) {
 	
 	if (missing(idvar)) {
 		stop("Specify id column (idvar) or if not in the newdata, add id column corresponding to row number.")
@@ -283,22 +284,26 @@ get_ibsTDC <- function(mod
 		out <- t(quantile(out, probs = prop, na.rm = TRUE))
 		out <- cbind.data.frame(time=temp, out)
 		colnames(out) <- c("time", "lower", "estimate", "upper")
+		out$model <- modelname
 	} else if (type=="BS") {
 		out <- do.call(rbind, est)
 		out <- aggregate(BScore~Time,out,FUN=function(x){quantile(x, prop, na.rm=TRUE)})
 		out <- cbind.data.frame(out$Time, out$BScore)
 		colnames(out) <- c("time", "lower", "estimate", "upper")
+		out$model <- modelname
 	} else {
 		out <- do.call("rbind", est)
 		IBS <- do.call("rbind", out[, "IBS"])
 		IBS <- t(quantile(IBS, probs = prop, na.rm = TRUE))
 		IBS <- cbind.data.frame(time=temp, IBS)
 		colnames(IBS) <- c("time", "lower", "estimate", "upper")
+		IBS$model <- modelname
 		
 		BS <- do.call("rbind", out[, "BS"])
 		BS <- aggregate(BScore~Time,BS,FUN=function(x){quantile(x, prop, na.rm=TRUE)})
 		BS <- cbind.data.frame(BS$Time, BS$BScore)
 		colnames(BS) <- c("time", "lower", "estimate", "upper")
+		BS$model <- modelname
 		out <- list(BS=BS, IBS=IBS)
 	}
 	attr(out, "type") <- type
@@ -321,14 +326,14 @@ plot.ibsTDC <- function(x, ..., which.plot=c("BS", "IBS", "both"), plotit=TRUE) 
 	if (which.plot=="both") {
 		BS <- x$BS
 		IBS <- x$IBS
-		BS <- (ggplot(BS, aes(x=time, y=estimate))
+		BS <- (ggplot(BS, aes(x=time, y=estimate, colour=model))
 			+ geom_line()
-			+ geom_line(aes(y=lower), lty=2)
-			+ geom_line(aes(y=upper), lty=2)
+			+ geom_line(aes(y=lower, colour=model), lty=2)
+			+ geom_line(aes(y=upper, colour=model), lty=2)
 			+ labs(x="Time", y="Brier score")
 		)
-		IBS <- (ggplot(IBS, aes(x=time, y=estimate))
-			+ geom_pointrange(aes(ymin=lower, ymax=upper))
+		IBS <- (ggplot(IBS, aes(x=time, y=estimate, colour=model))
+			+ geom_pointrange(aes(ymin=lower, ymax=upper, colour=model))
 			+ labs(x="Time", y="Integrated Brier Score")
 		)
 		if (plotit) {
@@ -338,10 +343,10 @@ plot.ibsTDC <- function(x, ..., which.plot=c("BS", "IBS", "both"), plotit=TRUE) 
 		invisible(list(BS=BS, IBS=IBS))
 	} else if (which.plot=="BS") {
 		if (type=="both") x <- x$BS
-		BS <- (ggplot(x, aes(x=time, y=estimate))
+		BS <- (ggplot(x, aes(x=time, y=estimate, colour=model))
 			+ geom_line()
-			+ geom_line(aes(y=lower),lty=2)
-			+ geom_line(aes(y=upper), lty=2)
+			+ geom_line(aes(y=lower, colour=model), lty=2)
+			+ geom_line(aes(y=upper, colour=model), lty=2)
 			+ labs(x="Time", y="Brier score")
 		)
 		if (plotit) {
@@ -350,8 +355,8 @@ plot.ibsTDC <- function(x, ..., which.plot=c("BS", "IBS", "both"), plotit=TRUE) 
 		invisible(BS)
 	} else {
 		if (type=="both") x <- x$IBS
-		IBS <- (ggplot(x, aes(x=time, y=estimate))
-			+ geom_pointrange(aes(ymin=lower, ymax=upper))
+		IBS <- (ggplot(x, aes(x=time, y=estimate, colour=model))
+			+ geom_pointrange(aes(ymin=lower, ymax=upper, colour=model))
 			+ labs(x="Time", y="Integrated Brier Score")
 		)
 		if (plotit) {

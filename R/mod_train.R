@@ -28,6 +28,10 @@ modtune <- function(formula = formula(data), data = sys.parent()
 	out <- list(result=result, besTune=besTune, modelfun = modfun, modelargs = mod_args)
 	out$terms <- Terms
 	out$call <- match.call()
+	ff_call <- out$call[["modfun"]]
+	if (ff_call=="gbm3.satpred") {
+		ff_call <- "gbm.satpred"
+	}
 	class(out) <- c("satpred", out$call[["modfun"]])
 	return(out)
 }

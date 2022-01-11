@@ -16,7 +16,8 @@ get_ibsTDC(
   nclusters = 1,
   ...,
   coefficients = mod$coefficientsd,
-  method = mod$method
+  method = mod$method,
+  modelname = class(mod)
 )
 }
 \description{
