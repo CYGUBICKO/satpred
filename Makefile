@@ -37,6 +37,7 @@ mod_train.Rout: R/mod_train.R
 posthocfuns.Rout: R/posthocfuns.R
 satpredplots.Rout: R/satpredplots.R
 ibrierscore.Rout: R/ibrierscore.R
+tdcroc.Rout: R/tdcroc.R
 
 ######################################################################
 
