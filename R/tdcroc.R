@@ -1,3 +1,6 @@
+#' Generate (TDC) ROC and AUC
+#'
+#' @keywords internal
 one_tdcroc <- function(mod
 	, newdata
 	, pred=NULL
@@ -28,7 +31,7 @@ one_tdcroc <- function(mod
 	if (is.null(span)) {
 		span <- 0.25 * NROW(newdata)^(-0.20)
 	}
-	out <- try(
+	out <- tryCatch({
 		survivalROC(Stime=Stime
 			, status=status
 			, entry=entry
@@ -40,8 +43,12 @@ one_tdcroc <- function(mod
 			, span=span
 			, window=window
 		)
-	)
+	}, error=function(e)return(list(cut.values=NA, TP=NA, FP=NA, predict.time=predict.time, Survival=NA, AUC=NA)))
 }
+
+#' Generate AUC and ROC
+#'
+#' @export
 
 get_tdcroc <- function(mod
 	, newdata
@@ -67,8 +74,10 @@ get_tdcroc <- function(mod
 	resamples_index <- resamplesTDC(newdata, nreps, idvar, return_index=TRUE, ...)
 	if (nreps==1) {
 		resamples_index <- list(list(index=1:NROW(newdata), newID=newdata[,idvar]))
+		plusone <- 0
 	} else {
 		resamples_index[nreps+1] <- list(list(index=1:NROW(newdata), newID=newdata[,idvar]))
+		plusone <- 1
 	}
 	if (parallelize) {
 		nn <- min(parallel::detectCores(), nclusters)
@@ -107,12 +116,12 @@ get_tdcroc <- function(mod
 			AUC <- rbind(AUC0, AUC1)
 			AUC <- sapply(AUC, unlist, simplify=FALSE)
 			AUC <- cbind.data.frame(AUC)
-			AUC <- aggregate(AUC~model+times, data=AUC, FUN=function(x){quantile(x, prob)})
+			AUC <- aggregate(AUC~model+times, data=AUC, FUN=function(x){quantile(x, prop, na.rm=TRUE)})
 			AUC <- cbind.data.frame(AUC[,c("model", "times")], AUC$AUC)
 			colnames(AUC) <- c("model", "times", "lower", "estimate", "upper")
-			ROC <- est[nreps+1, c("cut.values", "TP", "FP")]
+			ROC <- est[nreps+plusone, c("TP", "FP")]
 			ROC$times <- AUC$times[1]
-			out[[i]] <- list(ROC=ROC, AUC=AUC)
+			out[[i]] <- list(ROC=as.data.frame(ROC), AUC=AUC)
 		}
 	} else {
 		out <- list()
@@ -142,16 +151,85 @@ get_tdcroc <- function(mod
 			AUC <- rbind(AUC0, AUC1)
 			AUC <- sapply(AUC, unlist, simplify=FALSE)
 			AUC <- cbind.data.frame(AUC)
-			AUC <- aggregate(AUC~model+times, data=AUC, FUN=function(x){quantile(x, prop)})
+			AUC <- aggregate(AUC~model+times, data=AUC, FUN=function(x){quantile(x, prop, na.rm=TRUE)})
 			AUC <- cbind.data.frame(AUC[,c("model", "times")], AUC$AUC)
 			colnames(AUC) <- c("model", "times", "lower", "estimate", "upper")
-			ROC <- est[nreps+1, c("cut.values", "TP", "FP")]
+			ROC <- est[nreps+plusone, c("TP", "FP")]
 			ROC$times <- AUC$times[1]
-			out[[i]] <- list(ROC=ROC, AUC=AUC)
+			out[[i]] <- list(ROC=as.data.frame(ROC), AUC=AUC)
 		}
 	}
 	out <- unlist(out, recursive=FALSE)
-#	out <- do.call("rbind", out[names(out) %in% "AUC"])
-	out <- out[names(out) %in% "ROC"]
+	AUC <- do.call("rbind", out[names(out) %in% "AUC"])
+	rownames(AUC) <- NULL
+	ROC <- do.call("rbind", out[names(out) %in% "ROC"])
+	rownames(ROC) <- NULL
+	out <- list(AUC=AUC, ROC=ROC)
+	class(out) <- c("roctdc", class(out))
 	return(out)
+}
+
+#' Plot AUC and ROC supporting TDC
+#'
+#' @import ggplot2
+#' @export
+
+plot.roctdc <- function(x, ...
+	, which.plot=c("both", "auc", "roc")
+	, auc.type=c("line", "point")
+	, include.null=FALSE
+	, facet.roc=TRUE
+	, ci=TRUE
+	, pos=0.3
+	, size=0.2) {
+	which.plot <- match.arg(which.plot)
+	if (which.plot=="auc") {
+		AUC <- x$AUC
+		if (!include.null) {
+			AUC <- AUC[AUC$model!="Null model", ]
+		}
+		auc.type <- match.arg(auc.type)
+		if (length(unique(AUC$times))==1) auc.type <- "point"
+		if (auc.type=="point") {
+			p1 <- (ggplot(AUC, aes(x=as.factor(times), y=estimate, colour=model))
+				+ geom_pointrange(aes(ymin=lower, ymax=upper, colour=model), position=position_dodge(pos))
+			) 
+		} else {
+			p1 <- (ggplot(AUC, aes(x=times, colour=model, group=model))
+				+ geom_line(aes(y=estimate), size=size)
+			)
+			if (ci) {
+				p1 <- (p1
+					+ geom_line(aes(y=lower), lty=2, size=size)
+					+ geom_line(aes(y=upper), lty=2, size=size)
+				)
+			}
+		}
+		p1 <- (p1
+			+ labs(x="Time", y="AUC")
+		)
+	} else if (which.plot=="roc"||which.plot=="both") {
+		ROC <- x$ROC
+		ROC$times <- round(ROC$times, 2)
+		if (which.plot=="both") {
+			AUC <- x$AUC
+			AUC <- AUC[AUC$model!="Null model", ]
+			ROC <- merge(ROC, AUC)
+			ROC$times <- paste0(round(ROC$times,2), "; ", round(ROC$estimate,2), "[", round(ROC$lower,2), ",", round(ROC$upper,2), "]")
+		}
+		ROC <- ROC[order(ROC$TP, ROC$FP),]
+		p1 <- (ggplot(ROC, aes(x=FP, y=TP, colour=as.factor(times)))
+			+ geom_step()
+		)
+		if (facet.roc) {
+			p1 <- (p1
+				+ facet_wrap(~times)
+				+ theme(legend.position="none")
+			)
+		}
+		p1 <- (p1
+			+ labs(x="False positve rate", y="True positve rate")
+		)
+	} 
+	return(p1)
 }
