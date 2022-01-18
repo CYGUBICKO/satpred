@@ -178,14 +178,21 @@ get_avesurv.gbm <- function(object, ...) {
 get_indivsurv.gbm <- function(object, newdata) {
 	n.trees <- object$n.trees
 	traindata <- object$modelData
-	xb.train <- predict(object, newdata = traindata, n.trees = n.trees)
 	y <- model.extract(model.frame(terms(object), traindata), "response")
-	times <- sort(unique(drop(y[,1])))
-	H2 <- gbm::basehaz.gbm(t = y[,1], delta = y[,2]
-		, f.x = xb.train
-		, t.eval = times
-		, cumulative = TRUE
-	)
+	xb.train <- predict(object, newdata = traindata, n.trees = n.trees)
+	
+	if (NCOL(y)==2) {
+		times <- sort(unique(drop(y[,1])))
+		H2 <- gbm::basehaz.gbm(t = y[,1], delta = y[,2]
+			, f.x = xb.train
+			, t.eval = times
+			, cumulative = TRUE
+		)
+	} else {
+		H2 <- gbm3basehaz.gbm(object)
+		times <- H2$time
+		H2 <- H2$hazard
+	}
 	if (!missing(newdata)) {
 		xb.test <- predict(object, newdata = newdata , n.trees = n.trees)
 	} else {
@@ -221,8 +228,8 @@ pvimp.gbm <- function(model, newdata, nrep = 20, parallelize = TRUE, nclusters =
 		}
 
 		x <- NULL
-		permute_df <- newdata[rep(seq(N), nrep), ]
 		vi <- foreach(x = xvars, .export="survconcord.gbm") %dopar% {
+			permute_df <- newdata[rep(seq(N), nrep), ]
 			if (is.factor(permute_df[,x])) {
 				permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
 				permute_var <- factor(permute_var, levels = levels(permute_df[,x]))
@@ -239,8 +246,8 @@ pvimp.gbm <- function(model, newdata, nrep = 20, parallelize = TRUE, nclusters =
 			est
 		}
 	} else {
-		permute_df <- newdata[rep(seq(N), nrep), ]
 		vi <- sapply(xvars, function(x){
+			permute_df <- newdata[rep(seq(N), nrep), ]
 			if (is.factor(permute_df[,x])) {
 				permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
 				permute_var <- factor(permute_var, levels = levels(permute_df[,x]))
@@ -302,4 +309,95 @@ predictRisk.gbm.satpred <- function(object, newdata, times, ...){
 	p
 }
 
+#' Compute predicted hazard for gbm3
+#'
+#' This code is borrowed from internal function agsurv from survival package.
+#'
+#' @param object fitted \code{\link[gbm3]{gbm}} object.
+#' @return A list of S3 objects.
+#' \item{n}{number of observations used in the fit.}
+#' \item{events}{total number of events of interest in the fit.}
+#' \item{time}{time points defined by the risk set.}
+#' \item{n.risk}{the number of individuals at risk at time \code{t}.}
+#' \item{n.event}{the number of events that occur at time \code{t}.}
+#' \item{n.censor}{the number of subjects who exit the risk set, without an event, at time \code{t}.}
+#' \item{surv}{a vector or a matrix of estimated survival function.}
+#' \item{chaz, hazard}{a vector or a matrix of estimated cumulative hazard.}
+#' @keywords internal
 
+gbm3Hazard <- function(y, x = NULL, wt = rep(1, NROW(y)), risk=NULL, survtype=NULL, vartype=NULL){
+	status <- y[, ncol(y)]
+	dtime <- y[, ncol(y) - 1]
+	death <- (status == 1)
+	time <- sort(unique(dtime))
+	nevent <- as.vector(rowsum(wt * death, dtime))
+	ncens <- as.vector(rowsum(wt * (!death), dtime))
+	wrisk <- wt * risk
+	rcumsum <- function(x) rev(cumsum(rev(x)))
+	nrisk <- rcumsum(rowsum(wrisk, dtime))
+	irisk <- rcumsum(rowsum(wt, dtime))
+	if (NCOL(y) != 2){
+		delta <- min(diff(time))/2
+		etime <- c(sort(unique(y[, 1])), max(y[, 1]) + delta)
+		indx <- approx(etime, 1:length(etime), time, method = "constant", rule = 2, f = 1)$y
+		esum <- rcumsum(rowsum(wrisk, y[, 1]))
+		nrisk <- nrisk - c(esum, 0)[indx]
+		irisk <- irisk - c(rcumsum(rowsum(wt, y[, 1])), 0)[indx]
+	}
+	haz <- nevent/nrisk
+	result <- list(n = NROW(y), time = time, n.event = nevent
+																, n.risk = irisk, n.censor = ncens, hazard = haz
+																, chaz = cumsum(haz)
+	)
+	return(result)
+}
+
+#' Compute survival curve and cumulative hazard from a gbm3 through gbm model
+#'
+#' Compute the predicted survivor and cumulative hazard function for a penalized Cox proportional hazard model.
+#'
+#' @aliases gbm3survfit
+#'
+#' @export
+
+gbm3survfit.gbm <- function(fit, newdata, ...) {
+	y <- model.extract(model.frame(terms(fit), data=fit$modelData), "response")
+	risk <- exp(predict(fit, newdata=fit$modelData, n.trees=fit$n.trees))
+	afit <- gbm3Hazard(y = y, risk = risk)
+	chaz <- afit$chaz
+	surv.est <- exp(-chaz)
+	if (!missing(newdata)) {
+		lp <- predict(fit, newdata = newdata, n.trees=fit$n.trees)
+		surv.est <- sapply(surv.est, function(x) x^exp(lp))
+		chaz <- -log(surv.est)
+	} 
+	out <- list(n = afit$n
+		, events = sum(afit$n.event)
+		, time = afit$time
+		, n.risk = afit$n.risk
+		, n.event = afit$n.event
+		, n.censor = afit$n.censor
+		, surv = surv.est
+		, chaz = chaz
+	)
+	out$call <- match.call()
+	class(out) <- "satsurv"
+	out
+}
+
+#' Compute survival curve and cumulative hazard from a gbm3 through gbm model
+#'
+#' Compute the baseline hazard
+#'
+#' @aliases gbm3basehaz
+#'
+#' @export
+
+gbm3basehaz.gbm <- function(fit, centered = TRUE){
+	sfit <- gbm3survfit.gbm(fit = fit)
+	chaz <- sfit$chaz
+	surv.est <- exp(-chaz)
+	out <- list(time = sfit$time, hazard = chaz, surv = surv.est)
+	class(out) <- "satsurv"
+	out
+}

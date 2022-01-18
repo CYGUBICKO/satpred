@@ -32,7 +32,7 @@ modtune <- function(formula = formula(data), data = sys.parent()
 	if (ff_call=="gbm3.satpred") {
 		ff_call <- "gbm.satpred"
 	}
-	class(out) <- c("satpred", out$call[["modfun"]])
+	class(out) <- c("satpred", ff_call)
 	return(out)
 }
 

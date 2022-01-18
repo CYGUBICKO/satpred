@@ -8,12 +8,14 @@ one_tdcroc(
   mod,
   newdata,
   pred = NULL,
+  pred.type = "lp",
   predict.time = NULL,
   cut.values = NULL,
   method = "NNE",
   lambda = NULL,
   span = NULL,
-  window = "symmetric"
+  window = "symmetric",
+  ...
 )
 }
 \description{

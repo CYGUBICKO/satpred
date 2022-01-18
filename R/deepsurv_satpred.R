@@ -185,10 +185,10 @@ pvimp.deepsurv <- function(model, newdata, nrep = 20, parallelize = TRUE, nclust
 		}
 
 		x <- NULL
-		permute_df <- newdata[rep(seq(N), nrep), ]
-		events <- permute_df[[eventlab]] 
-		times <-  permute_df[[timelab]]
 		vi <- foreach(x = xvars, .packages="survivalmodels", .export=c("deepsurv", "survconcord.deepsurv")) %dopar% {
+			permute_df <- newdata[rep(seq(N), nrep), ]
+			events <- permute_df[[eventlab]] 
+			times <-  permute_df[[timelab]]
 			if (is.factor(permute_df[,x])) {
 				permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
 				permute_var <- factor(permute_var, levels = levels(permute_df[,x]))
@@ -214,10 +214,10 @@ pvimp.deepsurv <- function(model, newdata, nrep = 20, parallelize = TRUE, nclust
 			est
 		}
 	} else {
-		permute_df <- newdata[rep(seq(N), nrep), ]
-		events <- permute_df[[eventlab]] 
-		times <-  permute_df[[timelab]]
 		vi <- sapply(xvars, function(x){
+			permute_df <- newdata[rep(seq(N), nrep), ]
+			events <- permute_df[[eventlab]] 
+			times <-  permute_df[[timelab]]
 			if (is.factor(permute_df[,x])) {
 				permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
 				permute_var <- factor(permute_var, levels = levels(permute_df[,x]))

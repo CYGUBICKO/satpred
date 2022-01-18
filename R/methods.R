@@ -25,3 +25,9 @@ pvimp <- function(model, newdata, nrep = 20, nclusters = parallel::detectCores()
 #' @keywords internal
 varimp <- function(object, type = c("coef", "perm", "model"), relative = TRUE, newdata, nrep = 20, nclusters = parallel::detectCores(), ...)UseMethod("varimp")
 
+#' @export
+gbm3survfit <- function(fit, newdata, ...) UseMethod("gbm3survfit")
+
+#' @export
+gbm3basehaz <- function(fit, centered = TRUE) UseMethod("gbm3basehaz")
+

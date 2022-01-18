@@ -137,8 +137,8 @@ pvimp.rfsrc <- function(model, newdata, nrep = 20, parallelize = TRUE, nclusters
 		}
 
 		x <- NULL
-		permute_df <- newdata[rep(seq(N), nrep), ]
 		vi <- foreach(x = xvars, .export="survconcord.rfsrc") %dopar% {
+			permute_df <- newdata[rep(seq(N), nrep), ]
 			if (is.factor(permute_df[,x])) {
 				permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
 				permute_var <- factor(permute_var, levels = levels(permute_df[,x]))
@@ -156,8 +156,8 @@ pvimp.rfsrc <- function(model, newdata, nrep = 20, parallelize = TRUE, nclusters
 			est
 		}
 	} else {
-		permute_df <- newdata[rep(seq(N), nrep), ]
 		vi <- sapply(xvars, function(x){
+			permute_df <- newdata[rep(seq(N), nrep), ]
 			if (is.factor(permute_df[,x])) {
 				permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
 				permute_var <- factor(permute_var, levels = levels(permute_df[,x]))
@@ -202,8 +202,8 @@ pvimp.default <- function(model, newdata, nrep = 20, parallelize = TRUE, ncluste
 		}
 
 		x <- NULL
-		permute_df <- newdata[rep(seq(N), nrep), ]
 		vi <- foreach(x = xvars, .export = "survConcordance") %dopar% {
+			permute_df <- newdata[rep(seq(N), nrep), ]
 			if (is.factor(permute_df[,x])) {
 				permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
 				permute_var <- factor(permute_var, levels = levels(permute_df[,x]))
@@ -221,8 +221,8 @@ pvimp.default <- function(model, newdata, nrep = 20, parallelize = TRUE, ncluste
 			est
 		}
 	} else {
-		permute_df <- newdata[rep(seq(N), nrep), ]
 		vi <- sapply(xvars, function(x){
+			permute_df <- newdata[rep(seq(N), nrep), ]
 			if (is.factor(permute_df[,x])) {
 				permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
 				permute_var <- factor(permute_var, levels = levels(permute_df[,x]))

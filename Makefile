@@ -43,12 +43,16 @@ tdcroc.Rout: R/tdcroc.R
 
 ## Examples
 data.Rout: data.R
+data_tdc.Rout: data_tdc.R
 
 ### Survival forest
 examples_rfsrc.Rout: examples_rfsrc.R data.rda
 
 ### GBM
 examples_gbm.Rout: examples_gbm.R data.rda
+
+### GBM
+examples_gbm3.Rout: examples_gbm3.R data_tdc.rda
 
 ### deepsurv
 examples_deepsurv.Rout: examples_deepsurv.R data.rda

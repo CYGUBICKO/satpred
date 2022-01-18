@@ -4,12 +4,13 @@
 one_tdcroc <- function(mod
 	, newdata
 	, pred=NULL
+	, pred.type="lp"
 	, predict.time=NULL
 	, cut.values=NULL
 	, method="NNE"
 	, lambda=NULL
 	, span=NULL
-	, window="symmetric") {
+	, window="symmetric", ...) {
 	y <- model.extract(model.frame(terms(mod), data=newdata), "response")
 	if (NCOL(y)==2) {
 		entry <- NULL
@@ -24,9 +25,9 @@ one_tdcroc <- function(mod
 		predict.time <- max(Stime, na.rm=TRUE)
 	}
 	if (is.null(pred)) {
-		pred <- predict(mod, newdata=newdata, type="lp")
+		pred <- predict(mod, newdata=newdata, type=pred.type, ...)
 	} else if (is.function(pred)) {
-		pred <- do.call(pred, list(newdata=newdata, type="lp"))
+		pred <- do.call(pred, list(mod=mod, newdata=newdata, ...))
 	}
 	if (is.null(span)) {
 		span <- 0.25 * NROW(newdata)^(-0.20)
@@ -228,6 +229,7 @@ plot.roctdc <- function(x, ...
 			)
 		}
 		p1 <- (p1
+			+  scale_colour_viridis_d(option = "inferno")
 			+ labs(x="False positve rate", y="True positve rate")
 		)
 	} 
