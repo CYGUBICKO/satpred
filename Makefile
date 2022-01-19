@@ -51,7 +51,7 @@ examples_rfsrc.Rout: examples_rfsrc.R data.rda
 ### GBM
 examples_gbm.Rout: examples_gbm.R data.rda
 
-### GBM
+### GBM3
 examples_gbm3.Rout: examples_gbm3.R data_tdc.rda
 
 ### deepsurv
