@@ -60,6 +60,14 @@ examples_deepsurv.Rout: examples_deepsurv.R data.rda
 ### Compare
 examples_compare.Rout: examples_compare.R data.rda examples_rfsrc.rda examples_gbm.rda examples_deepsurv.rda
 
+## Compare glment and pcoxtime for tdc
+### using glmnet example
+examples_glmnet_data.Rout: examples_glmnet_data.R
+
+## Compare glment and pcoxtime 
+### using veteran data pseudo tdc
+examples_glmnet_veteran.Rout: examples_glmnet_veteran.R
+
 ######################################################################
 
 ## Package installation and checks
