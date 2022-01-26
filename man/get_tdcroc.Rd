@@ -10,6 +10,7 @@ get_tdcroc(
   idvar = NULL,
   time.eval = NULL,
   pred = NULL,
+  pred.type = "lp",
   cut.values = NULL,
   method = "NNE",
   lambda = NULL,

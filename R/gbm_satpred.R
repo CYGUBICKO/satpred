@@ -1,7 +1,7 @@
 #' Implemented packages
 #'
 #' @export
-gbm.satpred <- function(formula = NULL, train_df = NULL, test_df = NULL, distribution = "coxph", param_grid = NULL, n.trees = 1000, interaction.depth = 1, n.minobsinnode = 10, shrinkage = 0.1, finalmod = FALSE, ...) {
+gbm.satpred <- function(formula = NULL, train_df = NULL, test_df = NULL, distribution = "coxph", param_grid = NULL, n.trees = 1000, interaction.depth = 1, n.minobsinnode = 10, shrinkage = 0.1, finalmod = FALSE, error.method=c("auto", "OOB", "cv", "test"), ...) {
 	
 	gbm_args <- list(formula=formula, data=train_df, distribution=distribution)
 	if (is.null(param_grid)) {
@@ -20,6 +20,7 @@ gbm.satpred <- function(formula = NULL, train_df = NULL, test_df = NULL, distrib
 	new_args <- list(...)
 	if (length(new_args)) gbm_args[names(new_args)] <- new_args
 
+	error.method <- match.arg(error.method)
 	if (!finalmod) {
 		args_match <- match(colnames(param), names(gbm_args), nomatch = FALSE)
 		param_match <- match(names(gbm_args), colnames(param), nomatch = FALSE)
@@ -27,6 +28,20 @@ gbm.satpred <- function(formula = NULL, train_df = NULL, test_df = NULL, distrib
 			gbm_args[args_match] <- param[x, param_match]
 			fit <- do.call(gbm::gbm, gbm_args)
 			if (is.null(test_df)) test_df <- train_df
+			suppressMessages(	
+				if (error.method=="auto") {
+					if (fit$train.fraction<1) {
+						..n.trees <- gbm::gbm.perf(fit, method="test", plot.it=FALSE)
+					} else if (fit$cv.folds>1 & fit$train.fraction==1) {
+						..n.trees <- gbm::gbm.perf(fit, method="cv", plot.it=FALSE)
+					} else {
+						..n.trees <- gbm::gbm.perf(fit, method="OOB", plot.it=FALSE)
+					}
+				} else {
+						..n.trees <- gbm::gbm.perf(fit, method=error.method, plot.it=FALSE)
+				}
+			)
+			fit$n.trees <- ..n.trees
 			pred <- predict(fit, test_df, fit$n.trees)
 			class(pred) <- c(class(pred), "gbm")
 			all_params <- names(param_args)
@@ -49,7 +64,7 @@ gbm.satpred <- function(formula = NULL, train_df = NULL, test_df = NULL, distrib
 #' Implemented packages
 #'
 #' @export
-gbm3.satpred <- function(formula = NULL, train_df = NULL, test_df = NULL, distribution = "coxph", param_grid = NULL, n.trees = 1000, interaction.depth = 1, n.minobsinnode = 10, shrinkage = 0.1, finalmod = FALSE, ...) {
+gbm3.satpred <- function(formula = NULL, train_df = NULL, test_df = NULL, distribution = "coxph", param_grid = NULL, n.trees = 1000, interaction.depth = 1, n.minobsinnode = 10, shrinkage = 0.1, finalmod = FALSE, error.method=c("auto", "OOB", "cv", "test"), ...) {
 	
 	gbm_args <- list(formula=formula, data=train_df, distribution=distribution)
 	if (is.null(param_grid)) {
@@ -78,6 +93,20 @@ gbm3.satpred <- function(formula = NULL, train_df = NULL, test_df = NULL, distri
 				fit <- gbm3::to_old_gbm(fit)
 			)
 			if (is.null(test_df)) test_df <- train_df
+			suppressMessages(	
+				if (error.method=="auto") {
+					if (fit$train.fraction<1) {
+						..n.trees <- gbm::gbm.perf(fit, method="test", plot.it=FALSE)
+					} else if (fit$cv.folds>1 & fit$train.fraction==1) {
+						..n.trees <- gbm::gbm.perf(fit, method="cv", plot.it=FALSE)
+					} else {
+						..n.trees <- gbm::gbm.perf(fit, method="OOB", plot.it=FALSE)
+					}
+				} else {
+						..n.trees <- gbm::gbm.perf(fit, method=error.method, plot.it=FALSE)
+				}
+			)
+			fit$n.trees <- ..n.trees
 			pred <- predict(fit, test_df, fit$n.trees)
 			class(pred) <- c(class(pred), "gbm")
 			all_params <- names(param_args)

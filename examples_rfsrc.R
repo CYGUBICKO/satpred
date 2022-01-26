@@ -8,12 +8,14 @@ commandEnvironments()
 set.seed(8888)
 
 ### Cross-validation
-params_rfsrc <- expand.grid(mtry = c(4, 5, 6), nodesize = c(8, 10,15), ntree=c(800, 1000, 1200))
+params_rfsrc <- expand.grid(mtry = c(2, 3, 4), nodesize = seq(2,20,length.out=10), ntree=500)
 tuned_rfsrc <- modtune(Surv(time, status) ~ ., train_df, param_grid = params_rfsrc
-	, modfun = rfsrc.satpred, parallelize = TRUE, seed = 8888
+	, modfun = rfsrc.satpred, forest=TRUE, parallelize = TRUE, seed = 8888
 )
+tuned_rfsrc
 plot(tuned_rfsrc)
 
+quit()
 ### Fit model
 fit_rfsrc <- modfit(tuned_rfsrc, return_data = FALSE)
 

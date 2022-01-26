@@ -33,7 +33,7 @@ one_tdcroc <- function(mod
 		span <- 0.25 * NROW(newdata)^(-0.20)
 	}
 	out <- tryCatch({
-		survivalROC(Stime=Stime
+		survivalROC::survivalROC(Stime=Stime
 			, status=status
 			, entry=entry
 			, marker=pred
@@ -56,6 +56,7 @@ get_tdcroc <- function(mod
 	, idvar=NULL
 	, time.eval=NULL
 	, pred=NULL
+	, pred.type="lp"
 	, cut.values=NULL
 	, method="NNE"
 	, lambda=NULL
@@ -98,12 +99,14 @@ get_tdcroc <- function(mod
 				est <- one_tdcroc(mod=mod
 					, newdata=df
 					, pred=pred
+					, pred.type=pred.type
 					, predict.time=time.eval[[i]]
 					, cut.values=cut.values
 					, method=method
 					, lambda=lambda
 					, span=span
 					, window=window
+					, ...
 				)
 				est
 			}
@@ -133,12 +136,14 @@ get_tdcroc <- function(mod
 				est <- one_tdcroc(mod=mod
 					, newdata=df
 					, pred=pred
+					, pred.type=pred.type
 					, predict.time=time.eval[[i]]
 					, cut.values=cut.values
 					, method=method
 					, lambda=lambda
 					, span=span
 					, window=window
+					, ...
 				)
 				return(est)
 			})

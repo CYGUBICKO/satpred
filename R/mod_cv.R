@@ -13,13 +13,15 @@ modcv <- function(formula = formula(data), data = sys.parent(), modfun, nfolds =
 	} else {
 		nfolds = max(foldids)
 	}
-	if (nfolds < 3)stop("Number of folds should be at least 3: nfolds = 10 recommended")
+	## 2022 Jan 25 (Tue): For compatibility with gbm
+#	if (nfolds < 3)stop("Number of folds should be at least 3: nfolds = 10 recommended")
 	new_args <- list(...)
-	mod_args <- list(formula = formula, data = data)
+	mod_args <- list(formula = formula)
 	if (length(new_args)) mod_args[names(new_args)] <- new_args
 
 	# Perform CV
 	if (parallelize) {
+
 		## Setup parallel because serial takes a lot of time. Otherwise you can turn it off
 		nn <- min(parallel::detectCores(), nclusters)
 		if (nn < 2){
@@ -33,20 +35,30 @@ modcv <- function(formula = formula(data), data = sys.parent(), modfun, nfolds =
 		f <- NULL
 		out <- foreach(f = 1:nfolds, .combine = rbind, .multicombine = TRUE) %dopar% {
 			index <- which(foldids==f)
-			train_df <- data[-index, ]
-			heldout_df <- data[index, ]
+			if (nfolds==1) {
+				train_df <- data
+				heldout_df <- NULL
+			} else {
+				train_df <- data[-index, ]
+				heldout_df <- data[index, ]
+			}
 			mod_args$train_df <- train_df
 			mod_args$test_df <- heldout_df
 			est <- do.call(modfun, mod_args)
 			est[, "fold"] <- paste0("fold", f)
 			est
 		}
-	} else {
+	} else if (!parallelize || nfolds==1) {
 		out <- list()
 		for (f in 1:nfolds) {
 			index <- which(foldids==f)
-			train_df <- data[-index, ]
-			heldout_df <- data[index, ]
+			if (nfolds==1) {
+				train_df <- data
+				heldout_df <- NULL
+			} else {
+				train_df <- data[-index, ]
+				heldout_df <- data[index, ]
+			}
 			mod_args$train_df <- train_df
 			mod_args$test_df <- heldout_df
 			est <- do.call(modfun, mod_args)

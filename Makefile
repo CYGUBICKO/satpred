@@ -38,6 +38,7 @@ posthocfuns.Rout: R/posthocfuns.R
 satpredplots.Rout: R/satpredplots.R
 ibrierscore.Rout: R/ibrierscore.R
 tdcroc.Rout: R/tdcroc.R
+helperfuns.Rout: R/helperfuns.R
 
 ######################################################################
 

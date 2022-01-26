@@ -28,7 +28,7 @@ rfsrc.satpred <- function(formula = NULL, train_df = NULL, test_df = NULL, param
 		param_match <- match(names(rfsrc_args), colnames(param), nomatch = FALSE)
 		error <- lapply(1:NROW(param), function(x){
 			rfsrc_args[args_match] <- param[x, param_match]
-			fit <- do.call("rfsrc", rfsrc_args)
+			fit <- do.call("rfsrc.fast", rfsrc_args)
 			if (is.null(test_df)) test_df <- train_df
 			pred <- predict(fit, test_df)
 			all_params <- names(param_args)

@@ -32,6 +32,11 @@ modtune <- function(formula = formula(data), data = sys.parent()
 	if (ff_call=="gbm3.satpred") {
 		ff_call <- "gbm.satpred"
 	}
+	if (ff_call=="gbm.satpred") {
+		out$modelargs$cv.folds <- 0
+		out$modelargs$train.fraction <- 1
+		out$modelargs$error.method <- NULL
+	}
 	class(out) <- c("satpred", ff_call)
 	return(out)
 }

@@ -15,6 +15,7 @@ gbm3.satpred(
   n.minobsinnode = 10,
   shrinkage = 0.1,
   finalmod = FALSE,
+  error.method = c("auto", "OOB", "cv", "test"),
   ...
 )
 }
