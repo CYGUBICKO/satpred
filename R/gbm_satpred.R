@@ -240,8 +240,14 @@ get_indivsurv.gbm <- function(object, newdata) {
 #'
 #' @keywords internal
 
-pvimp.gbm <- function(model, newdata, nrep = 20, parallelize = TRUE, nclusters = parallel::detectCores(), ...){
+pvimp.gbm <- function(model, newdata, nrep = 20, parallelize = TRUE, nclusters = parallel::detectCores(), estimate=c("mean", "quantile"), probs=c(0.025, 0.5, 0.975), seed=NULL, ...){
 	# Overall score
+	if (is.null(seed) || !is.numeric(seed)) {
+		seed <- 911
+		set.seed(seed)
+	}
+
+	estimate <- match.arg(estimate)
 	overall_c <- survconcord.gbm(model, newdata = newdata, stats = FALSE, ...)
 	xvars <- all.vars(formula(delete.response(terms(model))))
 	N <- NROW(newdata)
@@ -270,9 +276,20 @@ pvimp.gbm <- function(model, newdata, nrep = 20, parallelize = TRUE, nclusters =
 			perm_c <- unlist(lapply(split(permute_df, index), function(d){
 				survconcord.gbm(model, newdata = droplevels(d), stats = FALSE, ...)
 			}))
-			est <- mean((overall_c - perm_c)/overall_c)
-			names(est) <- x
-			est
+			est <- (overall_c - perm_c)/overall_c
+			out <- switch(estimate
+				, mean={
+					out2 <- mean(est)
+					names(out2) <- x
+					out2
+				}
+				, quantile={
+					out2 <- cbind.data.frame(...xx=x, t(quantile(est, probs = probs, na.rm = TRUE)))
+					colnames(out2) <- c("terms", "lower", "estimate", "upper")
+					out2
+				}
+			)
+			out
 		}
 	} else {
 		vi <- sapply(xvars, function(x){
@@ -288,10 +305,32 @@ pvimp.gbm <- function(model, newdata, nrep = 20, parallelize = TRUE, nclusters =
 			perm_c <- unlist(lapply(split(permute_df, index), function(d){
 				survconcord.gbm(model, newdata = droplevels(d), stats = FALSE, ...)
 			}))
-			mean((overall_c - perm_c)/overall_c)
-		})
+			est <- (overall_c - perm_c)/overall_c
+			out <- switch(estimate
+				, mean={
+					out2 <- mean(est)
+					out2
+				}
+				, quantile={
+					out2 <- cbind.data.frame(...xx=x, t(quantile(est, probs = probs, na.rm = TRUE)))
+					colnames(out2) <- c("terms", "lower", "estimate", "upper")
+					out2
+				}
+			)
+			out
+		}, simplify=FALSE)
 	}
-	return(unlist(vi))
+	out <- switch(estimate
+		, mean={
+			unlist(vi)
+		}
+		, quantile={
+			est <- do.call("rbind", vi)
+			rownames(est) <- NULL
+			est
+		}
+	)
+	return(out)
 }
 
 
@@ -299,10 +338,10 @@ pvimp.gbm <- function(model, newdata, nrep = 20, parallelize = TRUE, nclusters =
 #'
 #' @keywords internal
 
-varimp.gbm <- function(object, type = c("coef", "perm", "model"), relative = TRUE, newdata, nrep = 20, parallelize = TRUE, nclusters = parallel::detectCores(), ...){
+varimp.gbm <- function(object, type = c("coef", "perm", "model"), relative = TRUE, newdata, nrep = 20, parallelize = TRUE, nclusters = parallel::detectCores(), estimate=c("mean", "quantile"), probs=c(0.025, 0.5, 0.975), seed=NULL, ...){
 	type <- match.arg(type)
 	if (type=="perm"){
-		out <- data.frame(Overall = get_pvimp(object, newdata, nrep, parallelize = parallelize, nclusters = nclusters, ...))
+		out <- data.frame(Overall = get_pvimp(object, newdata, nrep, parallelize = parallelize, nclusters = nclusters, estimate=estimate, probs=probs, seed=seed, ...))
 	} else {
 		new_args <- list(...)
 		new_args$object <- object
