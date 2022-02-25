@@ -182,47 +182,123 @@ plotpec <- function(x, ..., lsize = 0.3, ltype = 2, xlab = "Time", ylab = "Predi
 #' @import ggplot2
 #' @export
 
-plot.varimp <- function(x, ..., pos = 0.5, drop_zero = TRUE){
-	x$sign <- ifelse(x$sign==1, "+", ifelse(x$sign==-1, "-", "0"))
+plot.varimp <- function(x, ..., pos = 0.5, drop_zero = TRUE, top_n=NULL){
+	xsign <- x$sign
+	if (!is.null(xsign)) {
+		x$sign <- ifelse(xsign==1, "+", ifelse(xsign==-1, "-", "0"))
+	} else {
+		xsign <- 1
+	}
+	est <- attr(x, "estimate")
+	if (est=="quantile") {
+		x[ "Overall"] <- x$estimate
+	}
 	x <- x[order(x$Overall), ]
 	if (drop_zero){
 		x <- x[x$Overall!=0, ]
-		x <- droplevels(x)
 	}
+	if (!is.null(top_n)) {
+		x <- x[order(x$Overall, decreasing=TRUE), ]
+		x <- x[1:top_n, ]
+	}
+	x <- droplevels(x)
+
 	Overall <- NULL
-	nmods <- unique(x$model)
-	nsigns <- unique(x$sign)
-	pos <- position_dodge(width = pos)
-	if (length(nmods)==1) {
-		p0 <- ggplot(x, aes(x = reorder(terms, Overall), y = Overall)) 
+	lower <- NULL
+	upper <- NULL
+	nsigns <- unique(xsign)
+   nmods <- unique(x$model)
+   nsigns <- unique(x$sign)
+   pos <- position_dodge(width = pos)
+   if (length(nmods)==1) {
+#      p0 <- ggplot(x, aes(x = reorder(terms, Overall), y = Overall))
+      p0 <- ggplot(x, aes(x = terms, y = Overall))
+   } else {
+      p0 <- (ggplot(x, aes(x = reorder(terms, Overall), y = Overall, colour = model))
+         + labs(colour = "Model")
+      )
+   }
+
+	if (est=="quantile") {
+		if (length(nsigns)>1) {
+			p0 <- (p0
+				+ geom_point(aes(shape=sign), position = pos)
+				+ scale_shape_manual(name = "Sign", values=c(1,16, 15))
+				+ geom_linerange(aes(ymin=lower, ymax=upper, lty = sign), position = pos)
+				+ labs(linetype = "Sign")
+			)
+		} else {
+			p0 <- (p0
+				+ geom_point(position = pos)
+				+ geom_linerange(aes(ymin=lower, ymax=upper), position=pos)
+			)
+		}
 	} else {
-		p0 <- (ggplot(x, aes(x = reorder(terms, Overall), y = Overall, colour = model))
-			+ labs(colour = "Model")
-		)
-	}
-	if (length(nsigns)>1) {
-		p0 <- (p0
-			+ geom_point(aes(shape=sign), position = pos)
-			+ scale_shape_manual(name = "Sign", values=c(1,16, 15))
-			+ geom_linerange(aes(ymin = 0, ymax = Overall, lty = sign), position = pos)
-			+ labs(linetype = "Sign")
-		
-		)
-	} else {
-	
-		p0 <- (p0 
-			+ geom_point( position = pos)
-			+ geom_linerange(aes(ymin = 0, ymax = Overall), position = pos)
-		)
+		if (length(nsigns)>1) {
+			p0 <- (p0
+				+ geom_point(aes(shape=sign), position = pos)
+				+ scale_shape_manual(name = "Sign", values=c(1,16, 15))
+				+ geom_linerange(aes(ymin = 0, ymax = Overall, lty = sign), position = pos)
+				+ labs(linetype = "Sign")
+			)
+		} else {
+			p0 <- (p0
+				+ geom_point(position = pos)
+				+ geom_linerange(aes(ymin=0, ymax=Overall), position=pos)
+			)
+		}
 	}
 	p1 <- (p0
 		+ scale_colour_viridis_d(option = "inferno")
 		+ labs(x = "", y = "Importance")
 		+ coord_flip(clip = "off", expand = TRUE)
-		+ theme_minimal()	
 	)
 	return(p1)
 }
+
+#plot.varimp <- function(x, ..., pos = 0.5, drop_zero = TRUE){
+#   x$sign <- ifelse(x$sign==1, "+", ifelse(x$sign==-1, "-", "0"))
+#   x <- x[order(x$Overall), ]
+#   if (drop_zero){
+#      x <- x[x$Overall!=0, ]
+#      x <- droplevels(x)
+#   }
+#   Overall <- NULL
+#   nmods <- unique(x$model)
+#   nsigns <- unique(x$sign)
+#   pos <- position_dodge(width = pos)
+#   if (length(nmods)==1) {
+#      p0 <- ggplot(x, aes(x = reorder(terms, Overall), y = Overall))
+#   } else {
+#      p0 <- (ggplot(x, aes(x = reorder(terms, Overall), y = Overall, colour = model))
+#         + labs(colour = "Model")
+#      )
+#   }
+#   if (length(nsigns)>1) {
+#      p0 <- (p0
+#         + geom_point(aes(shape=sign), position = pos)
+#         + scale_shape_manual(name = "Sign", values=c(1,16, 15))
+#         + geom_linerange(aes(ymin = 0, ymax = Overall, lty = sign), position = pos)
+#         + labs(linetype = "Sign")
+#
+#      )
+#   } else {
+#
+#      p0 <- (p0
+#         + geom_point( position = pos)
+#         + geom_linerange(aes(ymin = 0, ymax = Overall), position = pos)
+#      )
+#   }
+#   p1 <- (p0
+#      + scale_colour_viridis_d(option = "inferno")
+#      + labs(x = "", y = "Importance")
+#      + coord_flip(clip = "off", expand = TRUE)
+#      + theme_minimal()
+#   )
+#   return(p1)
+#}
+
+
 
 #' Set theme for satpred plots
 #' 
