@@ -176,5 +176,6 @@ get_varimp <- function(object, type = c("coef", "perm", "model"), relative = TRU
 	out <- imp[, c("terms", "Overall", "sign")]
 	out$model <- modelname
 	class(out) <- c("varimp", class(out))
+	attr(out, "estimate") <- "mean"
 	return(out)
 }

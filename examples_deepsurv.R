@@ -9,10 +9,10 @@ set.seed(8888)
 
 ### Cross-validation
 params_deepsurv <- expand.grid(dropout = c(0.1, 0.4)
-	, learning_rate = c(0.1, 0.01, 0.001, 0.0001)
-	, epochs = c(500, 1000)
+	, learning_rate = c(0.1, 0.01)
+	, epochs = c(500, 100)
 )
-num_nodes <- list(n1 = c(32,32), n2 = c(25, 25), n3 = c(5, 10, 15))
+num_nodes <- list(n1 = c(32,32), n2 = 25, n3 = c(5, 10, 15))
 tuned_deepsurv <- modtune(Surv(time, status) ~ ., train_df, num_nodes = num_nodes
 	, param_grid = params_deepsurv, modfun = deepsurv.satpred, lr_decay = 0.001
 	, parallelize = TRUE

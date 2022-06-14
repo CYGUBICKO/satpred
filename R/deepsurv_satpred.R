@@ -66,7 +66,7 @@ deepsurv.satpred <- function(formula = NULL, train_df = NULL
 #' @keywords internal
 
 cverror.deepsurv <- function(x, y = NULL, ...){
-	score <- survival::survConcordance(y~x, ...)$concordance
+	score <- survival::concordance(y~x, reverse=TRUE, ...)$concordance
 	return(score)
 }
 
@@ -175,6 +175,9 @@ pvimp.deepsurv <- function(model, newdata, nrep = 20, parallelize = TRUE, nclust
 	overall_c <- survconcord.deepsurv(model, newdata = temp_df, stats = FALSE, ...)
 	if (parallelize) {
 		## Setup parallel because serial takes a lot of time. Otherwise you can turn it off
+		## FIXME: Parallelize breaks, setting nclusters to 1
+		nclusters <- 1
+		message("Ignores parallelize, running in serial...\n")
 		nn <- min(parallel::detectCores(), nclusters)
 		if (nn < 2){
 			foreach::registerDoSEQ()
@@ -207,7 +210,8 @@ pvimp.deepsurv <- function(model, newdata, nrep = 20, parallelize = TRUE, nclust
 				permute_df[[timelab]] <- times 
 			}
 			perm_c <- unlist(lapply(split(permute_df, index), function(d){
-				survconcord.deepsurv(model, newdata = droplevels(d), stats = FALSE, ...)
+				out <- survconcord.deepsurv(model, newdata = droplevels(d), stats = FALSE, ...)
+				return(out)
 			}))
 			est <- mean((overall_c - perm_c)/overall_c)
 			names(est) <- x
