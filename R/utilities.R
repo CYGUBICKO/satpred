@@ -28,6 +28,12 @@ rfsrc.satpred <- function(formula = NULL, train_df = NULL, test_df = NULL, param
 		param_match <- match(names(rfsrc_args), colnames(param), nomatch = FALSE)
 		error <- lapply(1:NROW(param), function(x){
 			rfsrc_args[args_match] <- param[x, param_match]
+			check_ndepth <- rfsrc_args$nodedepth
+			if (!is.null(check_ndepth)) {
+				if (check_ndepth==0) {
+					rfsrc_args['nodedepth'] <- list(NULL)
+				}
+			}
 			fit <- do.call("rfsrc.fast", rfsrc_args)
 			if (is.null(test_df)) test_df <- train_df
 			pred <- predict(fit, test_df)
@@ -35,6 +41,9 @@ rfsrc.satpred <- function(formula = NULL, train_df = NULL, test_df = NULL, param
 			all_params <- union(c("mtry", "ntree", "nodesize", "splitrule"), all_params)
 			param_temp <- fit[all_params]
 			names(param_temp) <- all_params
+			if (check_ndepth==0) {
+					param_temp$nodedepth <- 0
+			}
 			error_list <- list(param_temp, error = cverror(pred))
 			error_df <- as.data.frame(error_list)
 			return(error_df)
@@ -42,6 +51,12 @@ rfsrc.satpred <- function(formula = NULL, train_df = NULL, test_df = NULL, param
 		error <- do.call("rbind", error)
 		return(error)
 	} else {
+		check_ndepth <- rfsrc_args$nodedepth
+		if (!is.null(check_ndepth)) {
+			if (check_ndepth==0) {
+				rfsrc_args['nodedepth'] <- list(NULL)
+			}
+		}
 		fit <- do.call("rfsrc", rfsrc_args)
 		return(fit)
 	}

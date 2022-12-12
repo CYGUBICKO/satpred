@@ -8,10 +8,19 @@ commandEnvironments()
 set.seed(8888)
 
 ### Cross-validation
-params_rfsrc <- expand.grid(mtry = c(2, 3, 4), nodesize = seq(2,20,length.out=10), ntree=500)
-tuned_rfsrc <- modtune(Surv(time, status) ~ ., train_df, param_grid = params_rfsrc
+params_rfsrc <- expand.grid(mtry = c(2, 3), nodesize = seq(2,20,length.out=5)
+	, nodedepth=c(0, 500, 1000)
+)
+
+# ll <- rfsrc.satpred(formula=Surv(time, status) ~ ., train_df=train_df, param_grid=params_rfsrc, forest=TRUE)
+# 
+# quit()
+tuned_rfsrc <- modtune(Surv(time, status) ~ ., train_df, param_grid = params_rfsrc,
 	, modfun = rfsrc.satpred, forest=TRUE, parallelize = TRUE, seed = 8888
 )
+tuned_rfsrc
+
+quit()
 tuned_rfsrc
 plot(tuned_rfsrc)
 
