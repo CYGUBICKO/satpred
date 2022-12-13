@@ -41,8 +41,10 @@ rfsrc.satpred <- function(formula = NULL, train_df = NULL, test_df = NULL, param
 			all_params <- union(c("mtry", "ntree", "nodesize", "splitrule"), all_params)
 			param_temp <- fit[all_params]
 			names(param_temp) <- all_params
-			if (check_ndepth==0) {
-					param_temp$nodedepth <- 0
+			if (!is.null(check_ndepth)) {
+				if (check_ndepth==0) {
+						param_temp$nodedepth <- 0
+				}
 			}
 			error_list <- list(param_temp, error = cverror(pred))
 			error_df <- as.data.frame(error_list)
