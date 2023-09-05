@@ -12,6 +12,7 @@ modcv(
   foldids = NULL,
   parallelize = FALSE,
   nclusters = parallel::detectCores(),
+  cvseed = 911,
   ...
 )
 }

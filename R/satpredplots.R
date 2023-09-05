@@ -151,19 +151,9 @@ plot.Score <- function(x, ..., type = c("roc", "auc", "brier"), pos = 0.3, psize
 #' @export
 
 plotpec <- function(x, ..., lsize = 0.3, ltype = 2, xlab = "Time", ylab = "Prediction error") {
-	if (is.list(x)) {
-		if (!inherits(x[[1]], "pec")) stop("Needs a pec object. See ?pec::pec")
-		df <- lapply(x, function(dd){
-			df <- do.call("data.frame", list(dd$AppErr, times=dd$time, cohorts = dd$cohorts))
-			return(df)
-		})
-		df <- do.call("rbind", df)
-		vnames <- colnames(df)[!colnames(df) %in% c("times", "cohorts")]
-	} else {
-		if (!inherits(x, "pec")) stop("Needs a pec object. See ?pec::pec")
-		df <- do.call("data.frame", list(x$AppErr, times=x$time))
-		vnames <- colnames(df)[!colnames(df) %in% "times"]
-	}
+	if (!inherits(x, "pec")) stop("Needs a pec object. See ?pec::pec")
+	df <- do.call("data.frame", list(x$AppErr, times=x$time))
+	vnames <- colnames(df)[!colnames(df) %in% "times"]
 	df <- reshape(df, timevar = "model", v.names = "score"
 		, varying = vnames, times = vnames, direction = "long"
 	)

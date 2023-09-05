@@ -5,8 +5,9 @@
 #' @import foreach
 #' @import doParallel
 
-modcv <- function(formula = formula(data), data = sys.parent(), modfun, nfolds = 10, foldids = NULL, parallelize = FALSE, nclusters = parallel::detectCores(), ...) {
+modcv <- function(formula = formula(data), data = sys.parent(), modfun, nfolds = 10, foldids = NULL, parallelize = FALSE, nclusters = parallel::detectCores(), cvseed=911, ...) {
 	
+	set.seed(cvseed)
 	if (is.null(foldids)){
 	N <- NROW(data)
 		foldids <- sample(rep(seq(nfolds), length.out = N))
@@ -34,6 +35,7 @@ modcv <- function(formula = formula(data), data = sys.parent(), modfun, nfolds =
 
 		f <- NULL
 		out <- foreach(f = 1:nfolds, .combine = rbind, .multicombine = TRUE) %dopar% {
+			set.seed(cvseed)
 			index <- which(foldids==f)
 			if (nfolds==1) {
 				train_df <- data

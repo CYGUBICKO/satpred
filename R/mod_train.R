@@ -19,7 +19,7 @@ modtune <- function(formula = formula(data), data = sys.parent()
 	besTune <- getbesTune(result)
 	mod_args <- list(formula=formula, data=data)
 	mod_args[names(new_args)] <- new_args
-	best_args <- as.list(besTune[, hyper])
+	best_args <- as.list(besTune[, hyper, drop=FALSE])
 	mod_args[names(best_args)] <- best_args
 	default_args <- default_args[!names(default_args) %in% names(best_args)]
 	if (length(default_args)) mod_args[names(default_args)] <- default_args 

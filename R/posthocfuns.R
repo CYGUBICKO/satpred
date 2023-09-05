@@ -39,20 +39,6 @@ get_avesurv.glmnetsurv <- function(object, ...) {
 	out
 }
 
-#' Average survival for coxph
-#'
-#' @export
-get_avesurv.coxph <- function(object, ...) {
-	pred <- survfit(object, se=FALSE, ...)
-	surv <- rowMeans(pred$surv)
-	chaz <- -log(surv)
-	time <- pred$time
-	out <- list(time = time, surv = surv, chaz=chaz)
-	out$call <- match.call()
-	class(out) <- "satsurv"
-	out
-}
-
 #' Individual survival
 #'
 #' @export

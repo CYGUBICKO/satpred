@@ -2,7 +2,7 @@
 #'
 #' @export
 rfsrc.satpred <- function(formula = NULL, train_df = NULL, test_df = NULL, param_grid = NULL
-	, ntree = 1000, mtry = NULL, nodesize = NULL, splitrule = "logrank", forest = FALSE
+	, ntree = 1000, mtry = NULL, nodesize = NULL, splitrule = "logrank", forest = TRUE
 	, finalmod = FALSE, ...) {
 	
 	rfsrc_args <- list(formula=formula, data=train_df, forest=forest)
@@ -125,7 +125,7 @@ survconcord.default <- function(object, newdata = NULL, stats = FALSE, ...){
 		risk <- predict(object, newdata = newdata, type = "risk", ...)
 		y <- model.extract(model.frame(object$terms, data = newdata), "response")
 	}
-	conindex <- survival::survConcordance(y ~ risk)
+	conindex <- survival::concordancefit(y, -risk)
 	if (!stats){
 		conindex <- conindex$concordance
 	}
@@ -219,7 +219,7 @@ pvimp.default <- function(model, newdata, nrep = 20, parallelize = TRUE, ncluste
 		}
 
 		x <- NULL
-		vi <- foreach(x = xvars, .export = "survConcordance") %dopar% {
+		vi <- foreach(x = xvars, .export = "concordancefit") %dopar% {
 			permute_df <- newdata[rep(seq(N), nrep), ]
 			if (is.factor(permute_df[,x])) {
 				permute_var <- as.vector(replicate(nrep, sample(newdata[,x], N, replace = FALSE)))
@@ -231,7 +231,7 @@ pvimp.default <- function(model, newdata, nrep = 20, parallelize = TRUE, ncluste
 			permute_df[, x] <- permute_var
 			risk <- predict(model, newdata = permute_df, type = "risk")
 			perm_c <- tapply(risk, index, function(r){
-				survConcordance(y~r)$concordance
+				concordancefit(y, -r)$concordance
 			})
 			est <- mean((overall_c - perm_c)/overall_c)
 			names(est) <- x
@@ -250,7 +250,7 @@ pvimp.default <- function(model, newdata, nrep = 20, parallelize = TRUE, ncluste
 			permute_df[, x] <- permute_var
 			risk <- predict(model, newdata = permute_df, type = "risk")
 			perm_c <- tapply(risk, index, function(r){
-				survConcordance(y~r)$concordance
+				concordancefit(y, -r)$concordance
 			})
 			mean((overall_c - perm_c)/overall_c)
 		})

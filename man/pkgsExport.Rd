@@ -14,6 +14,7 @@
 \alias{rcorr.cens}
 \alias{gbm}
 \alias{deepsurv}
+\alias{coxph}
 \title{Import and export various functions from various packages}
 \description{
 Import and export various functions from various packages
@@ -41,5 +42,7 @@ Import and export rcorr.cens. See \code{\link[Hmisc]{rcorr.cens}}
 Import and export gbm. See \code{\link[gbm]{gbm}}
 
 Import and export deepsurv. See \code{\link[survivalmodels]{deepsurv}}
+
+Import and export coxph. See \code{\link[survival]{coxph}}
 }
 \keyword{internal}

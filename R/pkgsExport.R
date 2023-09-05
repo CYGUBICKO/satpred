@@ -112,3 +112,12 @@ NULL
 #' @rdname pkgsExport
 #' @keywords internal
 NULL
+
+#' Import and export coxph. See \code{\link[survival]{coxph}}
+#'
+#' @importFrom survival coxph
+#' @export coxph
+#' @name coxph
+#' @rdname pkgsExport
+#' @keywords internal
+NULL

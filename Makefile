@@ -29,6 +29,7 @@ autopipeR = defined
 satpred.Rout: R/satpred.R
 utilities.Rout: R/utilities.R
 gbm_satpred.Rout: R/gbm_satpred.R
+coxph_satpred.Rout: R/coxph_satpred.R
 deepsurv_satpred.Rout: R/deepsurv_satpred.R
 methods.Rout: R/methods.R
 pkgsExport.Rout: R/pkgsExport.R
@@ -47,6 +48,9 @@ helperfuns.Rout: R/helperfuns.R
 data.Rout: data.R
 data_tdc.Rout: data_tdc.R
 
+### Survival coxph
+examples_coxph.Rout: examples_coxph.R data.rda
+
 ### Survival forest
 examples_rfsrc.Rout: examples_rfsrc.R data.rda
 
@@ -60,7 +64,7 @@ examples_gbm3.Rout: examples_gbm3.R data_tdc.rda
 examples_deepsurv.Rout: examples_deepsurv.R data.rda
 
 ### Compare
-examples_compare.Rout: examples_compare.R data.rda examples_rfsrc.rda examples_gbm.rda examples_deepsurv.rda
+examples_compare.Rout: examples_compare.R data.rda examples_coxph.rda examples_rfsrc.rda examples_gbm.rda examples_deepsurv.rda
 
 ## Compare glment and pcoxtime for tdc
 ### using glmnet example
